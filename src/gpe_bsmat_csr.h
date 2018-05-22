@@ -25,11 +25,13 @@ class gpe_bsmat_csr {
 public:
   enum {BIN, SNAPPY};
 
-  gpe_bsmat_csr (gpe_props* i_prop);
-  gpe_bsmat_csr (gpe_props* i_prop, idx_t i_m, idx_t i_nnz);
+  gpe_bsmat_csr (gpe_props& i_prop);
+  gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz);
   ~gpe_bsmat_csr ();
 
-  void ordered_add (idx_t i, idx_t j);
+  void sorted_fill (idx_t i, idx_t j);
+
+  void set_offsets (uint64_t offl, uint64_t offc);
 
   void insert (idx_t i, idx_t j);
   void remove (idx_t i, idx_t j);
@@ -37,16 +39,20 @@ public:
   void save (std::string name, int fileformat = BIN, int64_t offl = 0, int64_t offc = 0);
   void load (std::string name);
 
+  size_t size ();
+  bool verify ();
+
 private:
-  gpe_props *prop;
+  gpe_props prop;
 
   bool is_alloc {false};
 
+  idx_t last_id {0};
   idx_t m;
   idx_t nnz;
 
-  int64_t offl;
-  int64_t offc;
+  uint64_t offl;
+  uint64_t offc;
 
   idx_t *ia;
   idx_t *ja;
@@ -54,19 +60,22 @@ private:
 
 /*! Clean constructor */
 template <class idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props* i_prop) {
+gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop) {
   prop = i_prop;
+  m = 0;
+  nnz = 0;
 }
 
 /*! Constructor for predefined matrix size */
 template <class idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props* i_prop, idx_t i_m, idx_t i_nnz) {
+gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz) {
   prop = i_prop;
   m = i_m;
   nnz = i_nnz;
 
-  if ((nnz+m+1)*sizeof(idx_t) < prop->ram_limit) {
+  if ((nnz+m+1)*sizeof(idx_t) < prop.ram_limit) {
     ia = new idx_t [m+1];
+    ia[0] = 0;
     ja = new idx_t [nnz];
     is_alloc = true;
   } else {
@@ -84,9 +93,21 @@ gpe_bsmat_csr<idx_t>::~gpe_bsmat_csr () {
 
 /*! Standard fill of the matrix */
 template <class idx_t>
-void gpe_bsmat_csr<idx_t>::ordered_add (idx_t i, idx_t j) {
+void gpe_bsmat_csr<idx_t>::sorted_fill (idx_t i, idx_t j) {
+  for (idx_t l = last_id+1; l <= i; l++) {
+    ia[l+1] = ia[l];
+  }
+
   ja[ia[i+1]] = j;
   ia[i+1]++;
+
+  last_id = i;
+}
+
+template <class idx_t>
+void gpe_bsmat_csr<idx_t>::set_offsets (uint64_t i_offl, uint64_t i_offc) {
+  offl = i_offl;
+  offc = i_offc;
 }
 
 /*! Inserting element in a CSR matrix */
@@ -202,8 +223,9 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   matfp.read ((char*) &m, sizeof(idx_t));
   matfp.read ((char*) &nnz, sizeof(idx_t));
 
-  if ((nnz+m+1)*sizeof(idx_t) < prop->ram_limit) {
+  if ((nnz+m+1)*sizeof(idx_t) < prop.ram_limit) {
     ia = new idx_t [m+1];
+    ia[0] = 0;
     ja = new idx_t [nnz];
     is_alloc = true;
   } else {
@@ -253,6 +275,16 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   }
   
   matfp.close();
+}
+
+template <class idx_t>
+size_t gpe_bsmat_csr<idx_t>::size () {
+  return (nnz + m+1)*sizeof(idx_t);
+}
+
+template <class idx_t>
+bool gpe_bsmat_csr<idx_t>::verify () {
+  return (nnz == ia[m+1]);
 }
 
 } // namespace graphee
