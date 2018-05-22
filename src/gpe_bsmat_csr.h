@@ -156,7 +156,7 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, int64_t offl,
 
     char* ia_snappy;
     size_t ia_snappy_size;
-    comp_succeed = compress_snappy ((const char*) ia, (m+1)*sizeof(idx_t), &ia_snappy, ia_snappy_size);
+    comp_succeed = compress_snappy ((char*) ia, (m+1)*sizeof(idx_t), &ia_snappy, ia_snappy_size);
 
     if (!comp_succeed) {
       std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY compression of IA failed" << std::endl;
@@ -172,7 +172,7 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, int64_t offl,
 
     char* ja_snappy;
     size_t ja_snappy_size;
-    comp_succeed = compress_snappy ((const char*) ja, (nnz)*sizeof(idx_t), &ja_snappy, ja_snappy_size);
+    comp_succeed = compress_snappy ((char*) ja, (nnz)*sizeof(idx_t), &ja_snappy, ja_snappy_size);
 
     if (!comp_succeed) {
       std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY compression of JA failed" << std::endl;

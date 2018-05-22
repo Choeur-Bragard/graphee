@@ -1,6 +1,6 @@
 #include "gpe_utils.h"
 
-bool compress_snappy (const char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes) {
+bool compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes) {
   char* uncomp_data = in_data;
   size_t max_bytes_per_block {UINT32_MAX - 1};
 
@@ -11,7 +11,7 @@ bool compress_snappy (const char* in_data, size_t in_bytes, char** out_data, siz
   (*out_data) = new char [max_size];
   char* comp_data = (*out_data); 
 
-  std::memcpy (comp_data, nblocks, sizeof(nblocks));
+  std::memcpy (comp_data, &nblocks, sizeof(nblocks));
   comp_data += nblocks;
 
   bool comp_succeed {false};
@@ -24,10 +24,7 @@ bool compress_snappy (const char* in_data, size_t in_bytes, char** out_data, siz
   for (int blkID = 0; blkID < nblocks; blkID++) {
     uncomp_size = std::min(max_bytes_per_block, in_bytes-read_bytes);
 
-    comp_succeed = snappy::RawCompress (uncomp_data, uncomp_size, comp_data, &comp_size);
-    if (!comp_succeed) {
-      return false;
-    }
+    snappy::RawCompress (uncomp_data, uncomp_size, comp_data, &comp_size);
 
     read_bytes += uncomp_size;
     uncomp_data += uncomp_size;
@@ -35,19 +32,19 @@ bool compress_snappy (const char* in_data, size_t in_bytes, char** out_data, siz
     comp_data += comp_size;
     out_bytes += comp_size;
 
-    if (uncomp_data > in_data + in_bytes || comp_data > out_data + max_size) {
+    if (uncomp_data > in_data + in_bytes || comp_data > *out_data + max_size) {
       return false;
     }
   }
   return true;
 }
 
-bool uncompress_snappy (const char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
+bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
   char* comp_data = in_data;
   char* uncomp_data = out_data;
 
   int nblocks;
-  std::memcpy (&nblocks, data, sizeof(nblocks));
+  std::memcpy (&nblocks, comp_data, sizeof(nblocks));
 
   comp_data += sizeof(nblocks);
 
@@ -69,7 +66,7 @@ bool uncompress_snappy (const char* in_data, size_t in_bytes, char* out_data, si
     comp_data += comp_size;
     uncomp_data += uncomp_size;
 
-    if (comp_data > in_data+in_bytes || uncomp_data > out_data + out_data) {
+    if (comp_data > in_data+in_bytes || uncomp_data > out_data+out_bytes) {
       return false;
     }
   }

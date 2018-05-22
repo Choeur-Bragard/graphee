@@ -31,8 +31,6 @@ namespace graphee {
 template <class gpe_mat_t, class idx_t>
 class gpe_diskmat {
 public:
-  enum {PLAIN, GZ};
-
   gpe_diskmat (gpe_props in_props);
   ~gpe_diskmat ();
 
@@ -42,6 +40,7 @@ public:
   void preLoadCol (const uint64_t colID);
   void getCSRBlock (const uint64_t blockID, uint64_t& m, uint64_t** ia, uint64_t& nnz, uint64_t** ja);
 
+  enum {PLAIN, GZ};
   static const int DIRECT = 0x00000001; 
   static const int TRANS  = 0x00000010; 
   static const int UO     = 0x00000100; 
