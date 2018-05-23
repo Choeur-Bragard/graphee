@@ -165,8 +165,10 @@ void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::
         bytes += 2*sizeof(uint64_t);
       }
     }
-    std::cout << "[GRAPHEE] Sorting file " << filenames[i-1] << " with "
-      << bytes/1024/1024 << " MB" << std::endl;
+    std::ostringstream log;
+    log << "[GRAPHEE] Sorting file " << filenames[i-1] << " with "
+      << bytes/1024/1024 << " MB";
+    gpe_log (log.str());
   }
 
   read_mtx.lock();
@@ -234,14 +236,17 @@ void gpe_diskmat<gpe_mat_t, idx_t>::load_GZ (const std::string filename, std::st
     ss->str(""); // empty string stream
     ss->clear(); // reset the position of EOS
 
-    std::cout << "[GRAPHEE] [LOAD_GZ] Extracting file " << filename << "... ";
+    std::ostringstream log;
+    log << "Extracting file " << filename;
+    gpe_log (log.str());
     (*ss) << gz_ifp.rdbuf();
     gz_ifp.close();
 
-    std::cout << "extracted !" << std::endl;
     read_mtx->unlock();
   } else {
-    std::cerr << "[GRAPHEE] [LOAD_GZ] Cannot open file " << filename << ", exiting...";
+    std::ostringstream err;
+    err << "Cannot open file " << filename << ", exiting...";
+    gpe_error (err.str());
     exit (-1);
   }
 }
@@ -251,7 +256,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::sort_and_save_list (uint64_t* block, uint64_
     std::fstream* ofp, std::mutex* mtx) {
 
   if (nelems%2 != 0) {
-    std::cerr << "[GRAPHEE] Wrong number of edges" << std::endl;
+    gpe_error ("Wrong number of edges");
     exit (-1);
   }
 
@@ -302,6 +307,8 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint64_t col, std::fstream* tmpfp,
     gpe_props* props, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
+  std::ostringstream oss;
+
   tmpfp->seekg (0, tmpfp->end);
   size_t filelen = tmpfp->tellg ();
   tmpfp->seekg (0, tmpfp->beg);
@@ -313,8 +320,11 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
 
   if (alloc_needs > props->ram_limit) {
     mtx->lock();
-    std::cerr << "[GRAPHEE] CSR block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB" << std::endl;
-    std::cerr << "          which is more memory than \'ram_limit\' " << props->ram_limit/(1UL << 30) << "GB" << std::endl;
+    oss << "CSR block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
+    gpe_error (oss.str());
+    oss.str("");
+    oss << "which is more memory than \'ram_limit\' " << props->ram_limit/(1UL << 30) << "GB";
+    gpe_error (oss.str());
     mtx->unlock();
     return; // not exit(-1); because we are within a thread
   }
@@ -363,7 +373,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
             if (edge[0] < std::numeric_limits<idx_t>::max() && edge[1] < std::numeric_limits<idx_t>::max()) {
               mat.sorted_fill ((idx_t) edge[0], (idx_t) edge[1]);
             } else {
-              std::cerr << "[GRAPHEE] [CSR_BUILDER] Overflow of \'idx_t\', exiting..." << std::endl;
+              gpe_error ("Overflow of \'idx_t\', exiting...");
               return;
             }
             offsets[sec] += 2*sizeof(uint64_t);
@@ -386,7 +396,9 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
 
   if (!mat.verify()) {
     mtx->lock();
-    std::cerr << "[GRAPHEE] Block [" << line << ";" << col << "] wrong conversion to CSR" << std::endl;
+    oss.str("");
+    oss << "Block [" << line << ";" << col << "] wrong conversion to CSR";
+    gpe_error (oss.str());
     mtx->unlock();
     return;
   }
@@ -405,6 +417,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mode) {
   std::ostringstream oss;
+  std::ostringstream err;
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
@@ -412,7 +425,10 @@ void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mod
       oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(oss.str(), mode);
       if (!tmpfp[bid].is_open()) {
-        std::cerr << "[GRAPHEE] Could not open file" << oss.str() << std::endl;
+        err.str("");
+        err << "Could not open file" << oss.str();
+        gpe_error (err.str());
+
         exit(-1);
       }
     }
@@ -421,9 +437,12 @@ void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mod
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
+  std::ostringstream err;
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
     if (!tmpfp[bid].is_open()) {
-      std::cerr << "[GRAPHEE] Could not close file" << std::endl;
+      err.str("");
+      err << "Could not close file" << std::endl;
+      gpe_error (err.str());
       exit(-1);
     }
     tmpfp[bid].close();

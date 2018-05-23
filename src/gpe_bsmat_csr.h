@@ -13,11 +13,12 @@
 
 namespace graphee {
 
-/*! \brief Boolean sparse matrix
+/*! \brief Boolean sparse matrix in CSR
+ *         Commonly named Compressed Sparse Row
  *
  * It defines a sparse matrix filled only with elements,
- * of values \{0,1\}. This is the case of a non-weighted-edges
- * graph.
+ * of values \{0,1\}. This is the case of a non-weighted-edge
+ * graphs.
  */
 
 template <class idx_t>
@@ -79,7 +80,7 @@ gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz) 
     ja = new idx_t [nnz];
     is_alloc = true;
   } else {
-    std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] Requested size is beyond RAMLIMIT" << std::endl;
+    gpe_error("Requested size is beyond \'ram_limit\'");
     exit (-1);
   }
 }
@@ -152,19 +153,9 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, int64_t offl,
     matfp.write ((const char*) ja, (nnz)*sizeof(idx_t));
 
   } else if (fileformat == SNAPPY) {
-    bool comp_succeed;
-
     char* ia_snappy;
     size_t ia_snappy_size;
-    comp_succeed = compress_snappy ((char*) ia, (m+1)*sizeof(idx_t), &ia_snappy, ia_snappy_size);
-
-    if (!comp_succeed) {
-      std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY compression of IA failed" << std::endl;
-
-      delete[] ia_snappy;
-      matfp.close();
-      exit (-1);
-    }
+    compress_snappy ((char*) ia, (m+1)*sizeof(idx_t), &ia_snappy, ia_snappy_size);
 
     matfp.write ((const char*) &ia_snappy_size, sizeof(size_t));
     matfp.write ((const char*) ia_snappy, ia_snappy_size);
@@ -172,15 +163,7 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, int64_t offl,
 
     char* ja_snappy;
     size_t ja_snappy_size;
-    comp_succeed = compress_snappy ((char*) ja, (nnz)*sizeof(idx_t), &ja_snappy, ja_snappy_size);
-
-    if (!comp_succeed) {
-      std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY compression of JA failed" << std::endl;
-
-      delete[] ja_snappy;
-      matfp.close();
-      exit (-1);
-    }
+    compress_snappy ((char*) ja, (nnz)*sizeof(idx_t), &ja_snappy, ja_snappy_size);
 
     matfp.write ((const char*) &ja_snappy_size, sizeof(size_t));
     matfp.write ((const char*) ja_snappy, ja_snappy_size);
@@ -207,7 +190,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
 
   char exp_matrix_type[] = "GPE_BSMAT_CSR";
   if (std::strcmp (matrix_type, exp_matrix_type) != 0) {
-    std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] Wrong matrix format, expected GPE_BSMAT_CSR, while file is " << matrix_type << std::endl;
+    gpe_error ("Wrong matrix format, expected GPE_BSMAT_CSR");
     exit (-1);
   }
 
@@ -229,7 +212,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     ja = new idx_t [nnz];
     is_alloc = true;
   } else {
-    std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] Requested size is beyond RAMLIMIT" << std::endl;
+    gpe_error ("Requested size is beyond \'RAMLIMIT\'");
     matfp.close();
     exit (-1);
   }
@@ -251,7 +234,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     delete[] ia_snappy;
 
     if (!uncomp_succeed) {
-      std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY uncompression of IA failed" << std::endl;
+      gpe_error("SNAPPY uncompression of IA failed");
 
       matfp.close();
       exit (-1);
@@ -267,7 +250,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     delete[] ja_snappy;
 
     if (!uncomp_succeed) {
-      std::cerr << "[GRAPHEE] [GPE_BSMAT_CSR] SNAPPY uncompression of JA failed" << std::endl;
+      gpe_error("SNAPPY uncompression of JA failed");
 
       matfp.close();
       exit (-1);

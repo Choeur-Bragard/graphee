@@ -18,8 +18,12 @@ public:
 };
 }
 
-bool compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes);
+void compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes);
 bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes);
+
+void gpe_log (std::string message);
+void gpe_warning (std::string message);
+void gpe_error (std::string message);
 
 
 #endif // GPE_UTILS_H

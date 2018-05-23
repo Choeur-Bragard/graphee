@@ -1,6 +1,6 @@
 #include "gpe_utils.h"
 
-bool compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes) {
+void compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes) {
   char* uncomp_data = in_data;
   size_t max_bytes_per_block {UINT32_MAX - 1};
 
@@ -33,10 +33,10 @@ bool compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& o
     out_bytes += comp_size;
 
     if (uncomp_data > in_data + in_bytes || comp_data > *out_data + max_size) {
-      return false;
+      gpe_error ("Snappy compression failed");
+      exit (-1);
     }
   }
-  return true;
 }
 
 bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
@@ -72,4 +72,16 @@ bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& 
   }
 
   return true;
+}
+
+void gpe_log (std::string message) {
+  std::cout << "\033[1m[GRAPHEE] [LOG] \033[0m " << message << std::endl;
+}
+
+void gpe_warning (std::string message) {
+  std::cout << "\033[1;36m[GRAPHEE] [WARN]\033[0m \033[36m" << message << "\033[0m" << std::endl;
+}
+
+void gpe_error (std::string message) {
+  std::cout << "\033[1;31m[GRAPHEE] [ERR] \033[0m \033[31m" << message << "\033[0m" << std::endl;
 }
