@@ -61,7 +61,7 @@ private:
   uint64_t pitch {0};
   uint64_t alpha {0};
 
-  uint64_t m;
+  idx_t m;
   uint64_t nnz;
 
   uint64_t offl;
@@ -153,7 +153,7 @@ void gpe_bsmat_dcsr<idx_t>::save (std::string name, int fileformat, uint64_t off
 
   /* Matrix dimension */
   matfp.write ((const char*) &m, sizeof(idx_t));
-  matfp.write ((const char*) &nnz, sizeof(idx_t));
+  matfp.write ((const char*) &nnz, sizeof(uint64_t));
   matfp.write ((const char*) &pitch, sizeof(uint64_t));
   matfp.write ((const char*) &alpha, sizeof(uint64_t));
 
@@ -213,7 +213,7 @@ void gpe_bsmat_dcsr<idx_t>::load (std::string name) {
 
   /* Matrix dimension */
   matfp.read ((char*) &m, sizeof(idx_t));
-  matfp.read ((char*) &nnz, sizeof(idx_t));
+  matfp.read ((char*) &nnz, sizeof(uint64_t));
   matfp.read ((char*) &pitch, sizeof(uint64_t));
   matfp.read ((char*) &alpha, sizeof(uint64_t));
 
