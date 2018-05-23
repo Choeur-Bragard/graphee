@@ -410,8 +410,8 @@ void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mod
       uint64_t bid = line + col*props.nslices;
       oss.str("");
       oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
-      tmpfp[i].open(oss.str(), mode);
-      if (!tmpfp[i].is_open()) {
+      tmpfp[bid].open(oss.str(), mode);
+      if (!tmpfp[bid].is_open()) {
         std::cerr << "[GRAPHEE] Could not open file" << oss.str() << std::endl;
         exit(-1);
       }
@@ -421,12 +421,12 @@ void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mod
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
-  for (uint64_t i = 0; i < props.nblocks; i++) {
-    if (!tmpfp[i].is_open()) {
+  for (uint64_t bid = 0; bid < props.nblocks; bid++) {
+    if (!tmpfp[bid].is_open()) {
       std::cerr << "[GRAPHEE] Could not close file" << std::endl;
       exit(-1);
     }
-    tmpfp[i].close();
+    tmpfp[bid].close();
   }
 }
 
