@@ -405,13 +405,16 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mode) {
   std::ostringstream oss;
-  for (uint64_t i = 0; i < props.nblocks; i++) {
-    oss.str("");
-    oss << props.name << "_tmpblk" << i << ".gphee";
-    tmpfp[i].open(oss.str(), mode);
-    if (!tmpfp[i].is_open()) {
-      std::cerr << "[GRAPHEE] Could not open file" << oss.str() << std::endl;
-      exit(-1);
+  for (uint64_t line = 0; line < props.nslices; line++) {
+    for (uint64_t col = 0; col < props.nslices; col++) {
+      uint64_t bid = line + col*props.nslices;
+      oss.str("");
+      oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
+      tmpfp[i].open(oss.str(), mode);
+      if (!tmpfp[i].is_open()) {
+        std::cerr << "[GRAPHEE] Could not open file" << oss.str() << std::endl;
+        exit(-1);
+      }
     }
   }
 }
