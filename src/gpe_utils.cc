@@ -1,6 +1,6 @@
 #include "gpe_utils.h"
 
-void compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& out_bytes) {
+void compress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
   char* uncomp_data = in_data;
   size_t max_bytes_per_block {UINT32_MAX - 1};
 
@@ -8,8 +8,7 @@ void compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& o
 
   size_t max_size = nblocks*sizeof(size_t) + nblocks*snappy::MaxCompressedLength(max_bytes_per_block);
 
-  (*out_data) = new char [max_size];
-  char* comp_data = (*out_data); 
+  char* comp_data = out_data; 
 
   std::memcpy (comp_data, &nblocks, sizeof(nblocks));
   comp_data += nblocks;
@@ -32,14 +31,14 @@ void compress_snappy (char* in_data, size_t in_bytes, char** out_data, size_t& o
     comp_data += comp_size;
     out_bytes += comp_size;
 
-    if (uncomp_data > in_data + in_bytes || comp_data > *out_data + max_size) {
+    if (uncomp_data > in_data + in_bytes || comp_data > out_data + max_size) {
       gpe_error ("Snappy compression failed");
       exit (-1);
     }
   }
 }
 
-bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
+bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t out_bytes) {
   char* comp_data = in_data;
   char* uncomp_data = out_data;
 
