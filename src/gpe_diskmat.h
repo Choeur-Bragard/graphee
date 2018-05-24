@@ -98,8 +98,9 @@ void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::
   uint64_t* edlI_pos = new uint64_t [props.nblocks];
 
   if (props.sort_limit*2*props.nblocks > props.ram_limit) {
-    std::cerr << "[GRAPHEE] To few memory allocated for sorting" << std::endl;
-    std::cerr << "          with respect to the \'ram_limit\' setting" << std::endl;
+    std::ostringstream err;
+    err << "To few memory allocated for sorting with respect to the \'ram_limit\' setting";
+    gpe_error (err.str());
     exit (-1);
   }
 
@@ -289,7 +290,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
 
   for (uint64_t line = 0; props.nslices; line++) {
     for (uint64_t col = 0; props.nslices; col++) {
-      uint64_t bid = col + line*props.nslices;
+      uint64_t bid = line + col*props.nslices;
       csr_threads.push_back(std::thread(csr_builder, props.window, line, col, &(tmpfp[bid]),
             &props, &alloc_mem, &mtx, &cond));
     }
