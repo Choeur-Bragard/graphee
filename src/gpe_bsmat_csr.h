@@ -265,7 +265,19 @@ size_t gpe_bsmat_csr<idx_t>::size () {
 
 template <class idx_t>
 bool gpe_bsmat_csr<idx_t>::verify () {
-  return (nnz == ia[m+1]);
+  for (idx_t l = last_id+1; l <= m; l++) {
+    ia[l+1] = ia[l];
+  }
+  last_id = m;
+
+  if (nnz == ia[m+1]) {
+    return true;
+  } else {
+    std::ostringstream oss;
+    oss << "NNZ = " << nnz << " IA[M] = " << ia[m];
+    gpe_warning (oss.str());
+    return false;
+  }
 }
 
 } // namespace graphee

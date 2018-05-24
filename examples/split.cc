@@ -11,8 +11,8 @@ using namespace graphee;
 
 int main (int argc, char** argv) {
   std::string name ("large");
-  gpe_props props (name, 3564, 10,
-      80, 400, gpe_props::GB, 1, gpe_props::GB);
+  gpe_props props (name, 98, 4,
+      8, 15, gpe_props::GB, 256, gpe_props::MB);
 
   std::ifstream filelist(argv[1]);
   std::vector<std::string> filenames;

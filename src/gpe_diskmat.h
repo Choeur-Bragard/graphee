@@ -80,7 +80,7 @@ gpe_diskmat<gpe_mat_t, idx_t>::~gpe_diskmat () {
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  read_and_split_list (filenames, ftype);
+  //read_and_split_list (filenames, ftype);
   csr_manager ();
 }
 
@@ -167,7 +167,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::
       }
     }
     std::ostringstream log;
-    log << "[GRAPHEE] Sorting file " << filenames[i-1] << " with "
+    log << "Sorting file " << filenames[i-1] << " with "
       << bytes/1024/1024 << " MB";
     gpe_log (log.str());
   }
