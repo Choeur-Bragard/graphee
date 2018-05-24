@@ -288,8 +288,8 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
   size_t alloc_mem {0};
   size_t ram_limit {props.ram_limit};
 
-  for (uint64_t line = 0; props.nslices; line++) {
-    for (uint64_t col = 0; props.nslices; col++) {
+  for (uint64_t line = 0; line < props.nslices; line++) {
+    for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
       csr_threads.push_back(std::thread(csr_builder, props.window, line, col, &(tmpfp[bid]),
             &props, &alloc_mem, &mtx, &cond));
