@@ -4,4 +4,4 @@
 - [ ] Include both PR and cuPR :zap:
 - [ ] Think to a fixed `gpe_props.window` logic
 - [ ] Implement mesh refinement for `gpe_diskmat`
-- [ ] Time stamp in logs
+- [x] Time stamp in logs
