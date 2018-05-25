@@ -236,7 +236,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     char* ia_snappy = new char [ia_snappy_size];
     matfp.read ((char*) ia_snappy, ia_snappy_size);
 
-    uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, (char*)ia.data(), (m+1)*sizeof(idx_t));
+    uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, (char*)ia.data(), (m+1)*sizeof(uint64_t));
     delete[] ia_snappy;
 
     if (!uncomp_succeed) {
@@ -252,7 +252,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     char* ja_snappy = new char [ja_snappy_size];
     matfp.read ((char*) ja_snappy, ja_snappy_size);
 
-    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, (char*)ja.data(), (nnz)*sizeof(uint64_t));
+    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, (char*)ja.data(), (nnz)*sizeof(idx_t));
     delete[] ja_snappy;
 
     if (!uncomp_succeed) {
