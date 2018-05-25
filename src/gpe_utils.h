@@ -2,6 +2,7 @@
 #define GPE_UTILS_H
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <cstring>
 #include <ctime>
@@ -20,6 +21,7 @@ public:
 };
 }
 
+size_t max_compress_size (size_t in_bytes);
 void compress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes);
 bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t out_bytes);
 

@@ -1,41 +1,45 @@
 #include "gpe_utils.h"
 
+size_t max_compress_size (size_t in_bytes) {
+  const size_t max_bytes_per_block {UINT32_MAX - 1};
+  int nblocks = in_bytes/max_bytes_per_block + (in_bytes%max_bytes_per_block == 0 ? 0 : 1);
+  return snappy::MaxCompressedLength(in_bytes) + nblocks*sizeof(size_t);
+}
+
 void compress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes) {
-  char* uncomp_data = in_data;
-  size_t max_bytes_per_block {UINT32_MAX - 1};
+  const size_t max_bytes_per_block {UINT32_MAX - 1};
+
+  size_t in_pos {0};
+  size_t out_pos {0};
 
   int nblocks = in_bytes/max_bytes_per_block + (in_bytes%max_bytes_per_block == 0 ? 0 : 1);
 
-  size_t max_size = nblocks*sizeof(size_t) + nblocks*snappy::MaxCompressedLength(max_bytes_per_block);
+  std::memcpy (out_data + out_pos, &nblocks, sizeof(nblocks));
+  out_pos += sizeof(nblocks);
 
-  char* comp_data = out_data; 
+  size_t in_block_size;
+  size_t out_block_size;
 
-  std::memcpy (comp_data, &nblocks, sizeof(nblocks));
-  comp_data += nblocks;
+  for (int blockID = 0; blockID < nblocks; blockID++) {
+    in_block_size = std::min(max_bytes_per_block, in_bytes - in_pos);
 
-  bool comp_succeed {false};
-  size_t read_bytes {0};
-  size_t comp_size;
-  size_t uncomp_size;
+    snappy::RawCompress (in_data + in_pos, in_block_size, out_data + out_pos + sizeof(size_t), &out_block_size);
+    std::memcpy (out_data + out_pos, &out_block_size, sizeof(size_t));
 
-  out_bytes = 0;
+    in_pos += in_block_size;
+    out_pos += out_block_size + sizeof(size_t);
 
-  for (int blkID = 0; blkID < nblocks; blkID++) {
-    uncomp_size = std::min(max_bytes_per_block, in_bytes-read_bytes);
-
-    snappy::RawCompress (uncomp_data, uncomp_size, comp_data, &comp_size);
-
-    read_bytes += uncomp_size;
-    uncomp_data += uncomp_size;
-
-    comp_data += comp_size;
-    out_bytes += comp_size;
-
-    if (uncomp_data > in_data + in_bytes || comp_data > out_data + max_size) {
+    if (in_pos > in_bytes || out_pos > out_bytes) {
       gpe_error ("Snappy compression failed");
       exit (-1);
     }
   }
+
+  out_bytes = out_pos;
+
+  std::ostringstream oss;
+  oss << "Snappy compressed " << in_bytes << " into " << out_bytes;
+  gpe_log (oss.str());
 }
 
 bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t out_bytes) {
@@ -44,6 +48,7 @@ bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t o
 
   int nblocks;
   std::memcpy (&nblocks, comp_data, sizeof(nblocks));
+  std::cout << nblocks << std::endl;
 
   comp_data += sizeof(nblocks);
 
