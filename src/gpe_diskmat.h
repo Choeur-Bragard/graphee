@@ -475,12 +475,13 @@ template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
   std::ostringstream err;
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
+    /*
     if (!tmpfp[bid].is_open()) {
       err.str("");
-      err << "Could not close file BID = " << bid << std::endl;
-      gpe_error (err.str());
-      exit(-1);
+      err << "File BID = " << bid << " already closed";
+      gpe_warning (err.str());
     }
+    */
     tmpfp[bid].close();
   }
 }

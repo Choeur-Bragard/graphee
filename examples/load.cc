@@ -21,10 +21,8 @@ int main (int argc, char** argv) {
   dmat.get_matrix_block (0, 0, smat);
 
   if (smat.verify()) {
-    std::cout << "Correct loading of the matrix" << std::endl;
     return 0;
   } else {
-    std::cout << "Incorrect loading of the matrix" << std::endl;
     return -1;
   }
 }

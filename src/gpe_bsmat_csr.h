@@ -184,12 +184,16 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   size_t matrix_type_size;
   matfp.read ((char*) &matrix_type_size, sizeof(size_t));
 
-  char matrix_type[matrix_type_size];
+  char* matrix_type = new char [matrix_type_size+1];
   matfp.read ((char*) matrix_type, matrix_type_size);
+  matrix_type[matrix_type_size] = '\0';
 
   char exp_matrix_type[] = "GPE_BSMAT_CSR";
   if (std::strcmp (matrix_type, exp_matrix_type) != 0) {
-    gpe_error ("Wrong matrix format, expected GPE_BSMAT_CSR");
+    std::ostringstream oss;
+    oss << "Wrong matrix format, expected " << exp_matrix_type << " " << std::strlen(exp_matrix_type)
+      << ", instead " << matrix_type << " " << std::strlen(matrix_type);
+    gpe_error (oss.str());
     exit (-1);
   }
 
@@ -254,7 +258,9 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
       exit (-1);
     }
   }
-  
+
+  last_id = m;
+
   matfp.close();
 }
 
@@ -265,17 +271,19 @@ size_t gpe_bsmat_csr<idx_t>::size () {
 
 template <class idx_t>
 bool gpe_bsmat_csr<idx_t>::verify () {
-  for (idx_t l = last_id+1; l <= m; l++) {
-    ia[l+1] = ia[l];
+  if (last_id < m) {
+    for (idx_t l = last_id+1; l <= m; l++) {
+      ia[l+1] = ia[l];
+    }
+    last_id = m;
   }
-  last_id = m;
 
-  if (nnz == ia[m+1]) {
+  if (nnz == ia[m]) {
     return true;
   } else {
     std::ostringstream oss;
-    oss << "NNZ = " << nnz << " IA[M+1] = " << ia[m+1];
-    gpe_warning (oss.str());
+    oss << "Wrong matrix : M = " << m << "; NNZ = " << nnz << "; IA[M] = " << ia[m];
+    gpe_error (oss.str());
     return false;
   }
 }
