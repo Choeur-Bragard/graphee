@@ -48,7 +48,7 @@ bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t o
 
   int nblocks;
 
-  std::memcpy (&nblocks, comp_data, sizeof(nblocks));
+  std::memcpy (&nblocks, in_data, sizeof(nblocks));
   in_pos += sizeof(nblocks);
 
   std::cout << nblocks << std::endl;
