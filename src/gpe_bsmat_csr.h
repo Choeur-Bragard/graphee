@@ -263,11 +263,6 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     }
   }
 
-  for (idx_t i = m; i > m-10; i--) {
-    std::cout << ia[i] << " ";
-  }
-  std::cout << std::endl;
-
   last_id = m;
 
   matfp.close();

@@ -57,8 +57,6 @@ private:
       std::mutex* read_mtx);
 
   void csr_manager ();
-  //static void csr_builder (uint64_t m, uint64_t line, uint64_t col, std::fstream* tmpfp,
-      //gpe_props* props, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
 
   static void csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
@@ -83,7 +81,7 @@ gpe_diskmat<gpe_mat_t, idx_t>::~gpe_diskmat () {
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  //read_and_split_list (filenames, ftype);
+  read_and_split_list (filenames, ftype);
   csr_manager ();
 }
 
@@ -308,8 +306,6 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
       csr_threads.push_back(std::thread(csr_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
-      //csr_threads.push_back(std::thread(csr_builder, props.window, line, col, &(tmpfp[bid]),
-            //&props, &alloc_mem, &mtx, &cond));
     }
   }
 
@@ -460,6 +456,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mod
       oss.str("");
       oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(oss.str(), mode);
+
       if (!tmpfp[bid].is_open()) {
         err.str("");
         err << "Could not open file" << oss.str();
@@ -475,14 +472,9 @@ template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
   std::ostringstream err;
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
-    /*
-    if (!tmpfp[bid].is_open()) {
-      err.str("");
-      err << "File BID = " << bid << " already closed";
-      gpe_warning (err.str());
+    if (tmpfp[bid].is_open()) {
+      tmpfp[bid].close();
     }
-    */
-    tmpfp[bid].close();
   }
 }
 
