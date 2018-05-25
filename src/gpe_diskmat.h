@@ -36,9 +36,7 @@ public:
 
   void load_edgelist (const std::vector<std::string>& filenames, int ftype, int options);
 
-  void preLoadLine (const uint64_t lineID);
-  void preLoadCol (const uint64_t colID);
-  void getCSRBlock (const uint64_t blockID, uint64_t& m, uint64_t** ia, uint64_t& nnz, uint64_t** ja);
+  void get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat);
 
   enum {PLAIN, GZ};
   static const int DIRECT = 0x00000001; 
@@ -59,8 +57,13 @@ private:
       std::mutex* read_mtx);
 
   void csr_manager ();
-  static void csr_builder (uint64_t m, uint64_t line, uint64_t col, std::fstream* tmpfp,
-      gpe_props* props, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
+  //static void csr_builder (uint64_t m, uint64_t line, uint64_t col, std::fstream* tmpfp,
+      //gpe_props* props, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
+
+  static void csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
+      std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
+
+  std::string get_block_filename (uint64_t line, uint64_t col);
 
   void open_tmp_blocks (std::ios_base::openmode mode);
   void close_tmp_blocks ();
@@ -80,8 +83,21 @@ gpe_diskmat<gpe_mat_t, idx_t>::~gpe_diskmat () {
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  read_and_split_list (filenames, ftype);
+  //read_and_split_list (filenames, ftype);
   csr_manager ();
+}
+
+template <class gpe_mat_t, class idx_t>
+void gpe_diskmat<gpe_mat_t, idx_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat) {
+  std::ostringstream oss;
+  oss << "Start to load CSR block [" << line << ":" << col << "]";
+  gpe_log (oss.str());
+
+  mat.load(get_block_filename(line, col));
+
+  oss.str("");
+  oss << "Loaded CSR block [" << line << ":" << col << "]";
+  gpe_log (oss.str());
 }
 
 /*! Reads the raw edgelist files
@@ -291,8 +307,9 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
-      csr_threads.push_back(std::thread(csr_builder, props.window, line, col, &(tmpfp[bid]),
-            &props, &alloc_mem, &mtx, &cond));
+      csr_threads.push_back(std::thread(csr_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
+      //csr_threads.push_back(std::thread(csr_builder, props.window, line, col, &(tmpfp[bid]),
+            //&props, &alloc_mem, &mtx, &cond));
     }
   }
 
@@ -306,8 +323,11 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
 }
 
 template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint64_t col, std::fstream* tmpfp,
-    gpe_props* props, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
+void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
+      std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
+
+  gpe_props props = dmat->props;
+
   std::ostringstream oss;
 
   tmpfp->seekg (0, tmpfp->end);
@@ -315,16 +335,16 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
   tmpfp->seekg (0, tmpfp->beg);
 
   uint64_t nnz = filelen/(2*sizeof(uint64_t));
-  uint64_t nsections = filelen/props->sort_limit + (filelen%props->sort_limit == 0 ? 0 : 1);
+  uint64_t nsections = filelen/props.sort_limit + (filelen%props.sort_limit == 0 ? 0 : 1);
 
-  size_t alloc_needs = (nnz + m+1)*sizeof(idx_t);
+  size_t alloc_needs = (props.window+1)*sizeof(uint64_t) + (nnz)*sizeof(idx_t);
 
-  if (alloc_needs > props->ram_limit) {
+  if (alloc_needs > props.ram_limit) {
     mtx->lock();
     oss << "CSR block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
     gpe_error (oss.str());
     oss.str("");
-    oss << "which is more memory than \'ram_limit\' " << props->ram_limit/(1UL << 30) << "GB";
+    oss << "which is more memory than \'ram_limit\' " << props.ram_limit/(1UL << 30) << "GB";
     gpe_error (oss.str());
     mtx->unlock();
     return; // not exit(-1); because we are within a thread
@@ -336,39 +356,39 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
   }
 
   std::unique_lock<std::mutex> mlock(*mtx);
-  while ((*alloc_mem) + alloc_needs > props->ram_limit) {
+  while ((*alloc_mem) + alloc_needs > props.ram_limit) {
     cond->wait(mlock);
   }
   (*alloc_mem) += alloc_needs;
   mlock.unlock();
 
-  gpe_mat_t mat (*props, props->window, nnz);
+  gpe_mat_t mat (props, props.window, nnz);
 
   uint64_t* offsets = new uint64_t [nsections];
   uint64_t* ids = new uint64_t [nsections];
 
   for (uint64_t i = 0; i < nsections; i++) {
-    offsets[i] = i*props->sort_limit;
-    ids[i] = line*m;
+    offsets[i] = i*props.sort_limit;
+    ids[i] = line*props.window;
   }
 
-  uint64_t currentid = line*m;
+  uint64_t currentid = line*props.window;
   uint64_t minid;
 
   uint64_t edge[2];
-  uint64_t offl = line*m;
-  uint64_t offc = col*m;
+  uint64_t offl = line*props.window;
+  uint64_t offc = col*props.window;
 
-  while (currentid < (line+1)*m) {
-    minid = (line+1)*m;
+  while (currentid < (line+1)*props.window) {
+    minid = (line+1)*props.window;
 
     for (uint64_t sec = 0; sec < nsections; sec++) {
-      if (ids[sec] == currentid && std::min(filelen, (sec+1)*props->sort_limit)) {
+      if (ids[sec] == currentid && std::min(filelen, (sec+1)*props.sort_limit)) {
         if (tmpfp->tellg() != offsets[sec]) {
           tmpfp->seekg(offsets[sec], tmpfp->beg);
         }
 
-        while (offsets[sec] < std::min(filelen, (sec+1)*props->sort_limit)) {
+        while (offsets[sec] < std::min(filelen, (sec+1)*props.sort_limit)) {
           tmpfp->read((char*)edge, 2*sizeof(uint64_t));
 
           if (edge[0] == currentid) {
@@ -414,15 +434,20 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
     mtx->unlock();
   }
 
-  std::ostringstream filename;
-  filename << props->name << "_csrblk_" << line << "_" << col << ".gpe";
-  mat.save(filename.str(), gpe_mat_t::SNAPPY, offl, offc);
+  mat.save(dmat->get_block_filename(line, col), gpe_mat_t::SNAPPY, offl, offc);
 
   mtx->lock();
   (*alloc_mem) -= alloc_needs;
   mtx->unlock();
 
   cond->notify_one();
+}
+
+template <class gpe_mat_t, class idx_t>
+std::string gpe_diskmat<gpe_mat_t, idx_t>::get_block_filename (uint64_t line, uint64_t col) {
+  std::ostringstream filename;
+  filename << props.name << "_csrblk_" << line << "_" << col << ".gpe";
+  return filename.str();
 }
 
 template <class gpe_mat_t, class idx_t>
