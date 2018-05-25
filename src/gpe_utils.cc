@@ -43,34 +43,35 @@ void compress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& ou
 }
 
 bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t out_bytes) {
-  char* comp_data = in_data;
-  char* uncomp_data = out_data;
+  size_t in_pos {0};
+  size_t out_pos {0};
 
   int nblocks;
+
   std::memcpy (&nblocks, comp_data, sizeof(nblocks));
+  in_pos += sizeof(nblocks);
+
   std::cout << nblocks << std::endl;
 
-  comp_data += sizeof(nblocks);
-
-  size_t comp_size;
-  size_t uncomp_size;
+  size_t in_block_size;
+  size_t out_block_size;
 
   bool uncomp_succeed {false};
 
-  for (int blkID = 0; blkID < nblocks; blkID++) {
-    std::memcpy (&comp_size, comp_data, sizeof(comp_size));
-    comp_data += sizeof(comp_data);
+  for (int blockID = 0; blockID < nblocks; blockID++) {
+    std::memcpy (&in_block_size, in_data + in_pos, sizeof(size_t));
+    in_pos += sizeof(size_t);
 
-    snappy::GetUncompressedLength (comp_data, comp_size, &uncomp_size);
-    uncomp_succeed = snappy::RawUncompress (comp_data, comp_size, uncomp_data);
+    snappy::GetUncompressedLength (in_data + in_pos, in_block_size, &out_block_size);
+    uncomp_succeed = snappy::RawUncompress (in_data + in_pos, in_block_size, out_data + out_pos);
     if (!uncomp_succeed) {
       return false;
     }
 
-    comp_data += comp_size;
-    uncomp_data += uncomp_size;
+    in_pos += in_block_size;
+    out_pos += out_block_size;
 
-    if (comp_data > in_data+in_bytes || uncomp_data > out_data+out_bytes) {
+    if (in_pos > in_bytes || out_pos > out_bytes) {
       return false;
     }
   }
