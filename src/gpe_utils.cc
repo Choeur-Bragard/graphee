@@ -77,7 +77,7 @@ void gpe_log (std::string message) {
   std::time_t t = std::time(nullptr);
   std::tm tm = *std::localtime(&t);
 
-  std::cout << "\033[1m [" << std::put_time(&tm, "%T") << "] [GRAPHEE] [LOG] \033[0m" << message << std::endl;
+  std::cout << "\033[1m [" << std::put_time(&tm, "%T") << "] [GRAPHEE] [LOG]  \033[0m" << message << std::endl;
 }
 
 void gpe_warning (std::string message) {

@@ -80,7 +80,7 @@ gpe_diskmat<gpe_mat_t, idx_t>::~gpe_diskmat () {
 
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  //read_and_split_list (filenames, ftype);
+  read_and_split_list (filenames, ftype);
   csr_manager ();
 }
 
@@ -328,6 +328,11 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
     gpe_error (oss.str());
     mtx->unlock();
     return; // not exit(-1); because we are within a thread
+  } else {
+    mtx->lock();
+    oss << "Starting CSR block conversion [" << line << ";" << col << "]";
+    gpe_log (oss.str());
+    mtx->unlock();
   }
 
   std::unique_lock<std::mutex> mlock(*mtx);
@@ -366,11 +371,10 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
         while (offsets[sec] < std::min(filelen, (sec+1)*props->sort_limit)) {
           tmpfp->read((char*)edge, 2*sizeof(uint64_t));
 
-          /* Substract the offset */
-          edge[0] -= offl;
-          edge[1] -= offc;
-
           if (edge[0] == currentid) {
+            /* Substract the offset */
+            edge[0] -= offl;
+            edge[1] -= offc;
             if (edge[0] < std::numeric_limits<idx_t>::max() && edge[1] < std::numeric_limits<idx_t>::max()) {
               mat.sorted_fill ((idx_t) edge[0], (idx_t) edge[1]);
             } else {
@@ -402,6 +406,12 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (uint64_t m, uint64_t line, uint
     gpe_error (oss.str());
     mtx->unlock();
     return;
+  } else {
+    mtx->lock();
+    oss.str("");
+    oss << "Block [" << line << ";" << col << "] conversion to CSR succeed !";
+    gpe_log (oss.str());
+    mtx->unlock();
   }
 
   std::ostringstream filename;
@@ -442,7 +452,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
     if (!tmpfp[bid].is_open()) {
       err.str("");
-      err << "Could not close file" << std::endl;
+      err << "Could not close file BID = " << bid << std::endl;
       gpe_error (err.str());
       exit(-1);
     }

@@ -44,13 +44,13 @@ public:
 
   size_t size ();
   bool verify ();
+  idx_t last_id {0};
 
 private:
   gpe_props prop;
 
   bool is_alloc {false};
 
-  idx_t last_id {0};
   idx_t m;
   uint64_t nnz;
 
@@ -274,7 +274,7 @@ bool gpe_bsmat_csr<idx_t>::verify () {
     return true;
   } else {
     std::ostringstream oss;
-    oss << "NNZ = " << nnz << " IA[M] = " << ia[m];
+    oss << "NNZ = " << nnz << " IA[M+1] = " << ia[m+1];
     gpe_warning (oss.str());
     return false;
   }
