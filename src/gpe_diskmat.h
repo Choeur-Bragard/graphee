@@ -31,7 +31,11 @@ namespace graphee {
 template <class gpe_mat_t>
 class gpe_diskmat {
 public:
-  gpe_diskmat (gpe_props in_props);
+  gpe_diskmat (gpe_props props, std::string mat_name) :
+    props(props), mat_name(mat_name) {
+    tmpfp = new std::fstream [props.nblocks];
+  }
+
   ~gpe_diskmat ();
 
   void load_edgelist (const std::vector<std::string>& filenames, int ftype, int options);
@@ -48,9 +52,11 @@ private:
   std::ostringstream wrn;
   std::ostringstream err;
 
+  gpe_props props;
+
   std::fstream *tmpfp;
 
-  gpe_props props;
+  std::string mat_name;
 
   void read_and_split_list (const std::vector<std::string>& filenames, int ftype);
 
@@ -69,12 +75,6 @@ private:
   void open_tmp_blocks (std::ios_base::openmode mode);
   void close_tmp_blocks ();
 };
-
-template <class gpe_mat_t>
-gpe_diskmat<gpe_mat_t>::gpe_diskmat (gpe_props in_props) {
-  props = in_props;
-  tmpfp = new std::fstream [props.nblocks];
-}
 
 template <class gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
@@ -454,7 +454,7 @@ void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t
 template <class gpe_mat_t>
 std::string gpe_diskmat<gpe_mat_t>::get_block_filename (uint64_t line, uint64_t col) {
   std::ostringstream csr_blockname;
-  csr_blockname << props.name << "_csrblk_" << line << "_" << col << ".gpe";
+  csr_blockname << props.name << "_" << mat_name << "_csrblk_" << line << "_" << col << ".gpe";
   return csr_blockname.str();
 }
 
@@ -466,7 +466,7 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
       blockname.str("");
-      blockname << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
+      blockname << props.name << "_" << mat_name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(blockname.str(), mode);
 
       if (!tmpfp[bid].is_open()) {
