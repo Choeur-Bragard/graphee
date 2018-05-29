@@ -28,10 +28,14 @@
 
 namespace graphee {
 
-template <class gpe_mat_t, class idx_t>
+template <class gpe_mat_t>
 class gpe_diskmat {
 public:
-  gpe_diskmat (gpe_props in_props);
+  gpe_diskmat (gpe_props props, std::string mat_name) :
+    props(props), mat_name(mat_name) {
+    tmpfp = new std::fstream [props.nblocks];
+  }
+
   ~gpe_diskmat ();
 
   void load_edgelist (const std::vector<std::string>& filenames, int ftype, int options);
@@ -44,9 +48,15 @@ public:
   static const int UO     = 0x00000100; 
 
 private:
-  std::fstream *tmpfp;
+  std::ostringstream log;
+  std::ostringstream wrn;
+  std::ostringstream err;
 
   gpe_props props;
+
+  std::fstream *tmpfp;
+
+  std::string mat_name;
 
   void read_and_split_list (const std::vector<std::string>& filenames, int ftype);
 
@@ -56,9 +66,14 @@ private:
   static void load_GZ (const std::string filename, std::stringstream* ss,
       std::mutex* read_mtx);
 
+<<<<<<< HEAD
   void csr_manager ();
 
   static void csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
+=======
+  void diskblock_manager ();
+  static void diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
+>>>>>>> develop
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
 
   std::string get_block_filename (uint64_t line, uint64_t col);
@@ -67,35 +82,36 @@ private:
   void close_tmp_blocks ();
 };
 
-template <class gpe_mat_t, class idx_t>
-gpe_diskmat<gpe_mat_t, idx_t>::gpe_diskmat (gpe_props in_props) {
-  props = in_props;
-  tmpfp = new std::fstream [props.nblocks];
-}
-
-template <class gpe_mat_t, class idx_t>
-gpe_diskmat<gpe_mat_t, idx_t>::~gpe_diskmat () {
+template <class gpe_mat_t>
+gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   close_tmp_blocks ();
   delete [] tmpfp;
 }
 
+<<<<<<< HEAD
 template <class gpe_mat_t, class idx_t>
 void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
   read_and_split_list (filenames, ftype);
   csr_manager ();
+=======
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
+  //read_and_split_list (filenames, ftype);
+  diskblock_manager ();
+>>>>>>> develop
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat) {
-  std::ostringstream oss;
-  oss << "Start to load CSR block [" << line << ":" << col << "]";
-  gpe_log (oss.str());
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat) {
+  log.str("");
+  log << "Start to load disk block [" << line << ":" << col << "]";
+  gpe_log (log.str());
 
   mat.load(get_block_filename(line, col));
 
-  oss.str("");
-  oss << "Loaded CSR block [" << line << ":" << col << "]";
-  gpe_log (oss.str());
+  log.str("");
+  log << "Loaded disk block [" << line << ":" << col << "]";
+  gpe_log (log.str());
 }
 
 /*! Reads the raw edgelist files
@@ -104,15 +120,15 @@ void gpe_diskmat<gpe_mat_t, idx_t>::get_matrix_block (uint64_t line, uint64_t co
  *  It splits the edgelist into blocks in order to make
  *  the D/CSR building faster
  */
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::string>& filenames, int ftype) {
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>& filenames, int ftype) {
   uint64_t** edlI = new uint64_t* [props.nblocks];
   uint64_t** edlO = new uint64_t* [props.nblocks];
 
   uint64_t* edlI_pos = new uint64_t [props.nblocks];
 
   if (props.sort_limit*2*props.nblocks > props.ram_limit) {
-    std::ostringstream err;
+    err.str("");
     err << "To few memory allocated for sorting with respect to the \'ram_limit\' setting";
     gpe_error (err.str());
     exit (-1);
@@ -180,7 +196,8 @@ void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::
         bytes += 2*sizeof(uint64_t);
       }
     }
-    std::ostringstream log;
+
+    log.str("");
     log << "Sorting file " << filenames[i-1] << " with "
       << bytes/1024/1024 << " MB";
     gpe_log (log.str());
@@ -242,8 +259,11 @@ void gpe_diskmat<gpe_mat_t, idx_t>::read_and_split_list (const std::vector<std::
   close_tmp_blocks ();
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::load_GZ (const std::string filename, std::stringstream* ss, std::mutex* read_mtx) {
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::load_GZ (const std::string filename, std::stringstream* ss, std::mutex* read_mtx) {
+  std::ostringstream log;
+  std::ostringstream err;
+
   igzstream gz_ifp (filename.data());
 
   if (gz_ifp) {
@@ -251,7 +271,7 @@ void gpe_diskmat<gpe_mat_t, idx_t>::load_GZ (const std::string filename, std::st
     ss->str(""); // empty string stream
     ss->clear(); // reset the position of EOS
 
-    std::ostringstream log;
+    log.str("");
     log << "Extracting file " << filename;
     gpe_log (log.str());
     (*ss) << gz_ifp.rdbuf();
@@ -259,15 +279,15 @@ void gpe_diskmat<gpe_mat_t, idx_t>::load_GZ (const std::string filename, std::st
 
     read_mtx->unlock();
   } else {
-    std::ostringstream err;
+    err.str("");
     err << "Cannot open file " << filename << ", exiting...";
     gpe_error (err.str());
     exit (-1);
   }
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::sort_and_save_list (uint64_t* block, uint64_t nelems,
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::sort_and_save_list (uint64_t* block, uint64_t nelems,
     std::fstream* ofp, std::mutex* mtx) {
 
   if (nelems%2 != 0) {
@@ -290,9 +310,9 @@ void gpe_diskmat<gpe_mat_t, idx_t>::sort_and_save_list (uint64_t* block, uint64_
   delete[] edgeptrs;
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
-  std::vector<std::thread> csr_threads;
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::diskblock_manager () {
+  std::vector<std::thread> diskblock_threads;
 
   open_tmp_blocks (std::ios_base::in | std::ios_base::binary);
 
@@ -305,26 +325,30 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_manager () {
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
+<<<<<<< HEAD
       csr_threads.push_back(std::thread(csr_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
+=======
+      diskblock_threads.push_back(std::thread(diskblock_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
+>>>>>>> develop
     }
   }
 
   for (uint64_t i = 0; i < props.nblocks; i++) {
-    if (csr_threads[i].joinable()) {
-      csr_threads[i].join();
+    if (diskblock_threads[i].joinable()) {
+      diskblock_threads[i].join();
     }
   }
 
   close_tmp_blocks ();
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
+  std::ostringstream log;
+  std::ostringstream err;
 
   gpe_props props = dmat->props;
-
-  std::ostringstream oss;
 
   tmpfp->seekg (0, tmpfp->end);
   size_t filelen = tmpfp->tellg ();
@@ -333,21 +357,23 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* d
   uint64_t nnz = filelen/(2*sizeof(uint64_t));
   uint64_t nsections = filelen/props.sort_limit + (filelen%props.sort_limit == 0 ? 0 : 1);
 
-  size_t alloc_needs = (props.window+1)*sizeof(uint64_t) + (nnz)*sizeof(idx_t);
+  size_t alloc_needs = (props.window+1)*sizeof(uint64_t) + (nnz)*sizeof(typename gpe_mat_t::index_type);
 
   if (alloc_needs > props.ram_limit) {
     mtx->lock();
-    oss << "CSR block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
-    gpe_error (oss.str());
-    oss.str("");
-    oss << "which is more memory than \'ram_limit\' " << props.ram_limit/(1UL << 30) << "GB";
-    gpe_error (oss.str());
+    err.str("");
+    err << "Disk block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
+    gpe_error (err.str());
+    err.str("");
+    err << "which is more memory than \'ram_limit\' " << props.ram_limit/(1UL << 30) << "GB";
+    gpe_error (err.str());
     mtx->unlock();
     return; // not exit(-1); because we are within a thread
   } else {
     mtx->lock();
-    oss << "Starting CSR block conversion [" << line << ";" << col << "]";
-    gpe_log (oss.str());
+    log.str("");
+    log << "Starting disk block conversion [" << line << ";" << col << "]";
+    gpe_log (log.str());
     mtx->unlock();
   }
 
@@ -391,10 +417,13 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* d
             /* Substract the offset */
             edge[0] -= offl;
             edge[1] -= offc;
-            if (edge[0] < std::numeric_limits<idx_t>::max() && edge[1] < std::numeric_limits<idx_t>::max()) {
-              mat.sorted_fill ((idx_t) edge[0], (idx_t) edge[1]);
+            if (edge[0] < std::numeric_limits<typename gpe_mat_t::index_type>::max() 
+                && edge[1] < std::numeric_limits<typename gpe_mat_t::index_type>::max()) {
+
+              mat.sorted_fill (static_cast<typename gpe_mat_t::index_type>(edge[0]), 
+                  static_cast<typename gpe_mat_t::index_type>(edge[1]));
             } else {
-              gpe_error ("Overflow of \'idx_t\', exiting...");
+              gpe_error ("Overflow of \'gpe_mat_t::index_type\', exiting...");
               return;
             }
             offsets[sec] += 2*sizeof(uint64_t);
@@ -417,16 +446,16 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* d
 
   if (!mat.verify()) {
     mtx->lock();
-    oss.str("");
-    oss << "Block [" << line << ";" << col << "] wrong conversion to CSR";
-    gpe_error (oss.str());
+    err.str("");
+    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' failed !";
+    gpe_error (err.str());
     mtx->unlock();
     return;
   } else {
     mtx->lock();
-    oss.str("");
-    oss << "Block [" << line << ";" << col << "] conversion to CSR succeed !";
-    gpe_log (oss.str());
+    log.str("");
+    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' succeed !";
+    gpe_log (log.str());
     mtx->unlock();
   }
 
@@ -439,38 +468,42 @@ void gpe_diskmat<gpe_mat_t, idx_t>::csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* d
   cond->notify_one();
 }
 
-template <class gpe_mat_t, class idx_t>
-std::string gpe_diskmat<gpe_mat_t, idx_t>::get_block_filename (uint64_t line, uint64_t col) {
-  std::ostringstream filename;
-  filename << props.name << "_csrblk_" << line << "_" << col << ".gpe";
-  return filename.str();
+template <class gpe_mat_t>
+std::string gpe_diskmat<gpe_mat_t>::get_block_filename (uint64_t line, uint64_t col) {
+  std::ostringstream matrixname;
+  matrixname << props.name << "_" << mat_name << "_dmatblk_" << line << "_" << col << ".gpe";
+  return matrixname.str();
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::open_tmp_blocks (std::ios_base::openmode mode) {
-  std::ostringstream oss;
-  std::ostringstream err;
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
+  std::ostringstream blockname;
+
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
+<<<<<<< HEAD
       oss.str("");
       oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(oss.str(), mode);
+=======
+      blockname.str("");
+      blockname << props.name << "_" << mat_name << "_tmpblk_" << line << "_" << col << ".gpe";
+      tmpfp[bid].open(blockname.str(), mode);
+>>>>>>> develop
 
       if (!tmpfp[bid].is_open()) {
         err.str("");
-        err << "Could not open file" << oss.str();
+        err << "Could not open file" << blockname.str();
         gpe_error (err.str());
-
         exit(-1);
       }
     }
   }
 }
 
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::close_tmp_blocks () {
-  std::ostringstream err;
+template <class gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::close_tmp_blocks () {
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
     if (tmpfp[bid].is_open()) {
       tmpfp[bid].close();

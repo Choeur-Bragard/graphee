@@ -24,7 +24,7 @@ namespace graphee {
  */
 
 template <class idx_t>
-class gpe_bsmat_csr {
+class gpe_bsmat_csr{
 public:
   enum {BIN, SNAPPY};
 
@@ -46,7 +46,16 @@ public:
   bool verify ();
   idx_t last_id {0};
 
+  const typedef idx_t index_type;
+  const typedef bool value_type;
+
+  const std::string matrix_type {"GPE_BSMAT_CSR"};
+
 private:
+  std::ostringstream log;
+  std::ostringstream wrn;
+  std::ostringstream err;
+
   gpe_props prop;
 
   bool is_alloc {false};
@@ -129,29 +138,29 @@ template <class idx_t>
 void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl, uint64_t) {
   std::ofstream matfp (name, std::ios_base::binary);
 
-  std::string matrix_type ("GPE_BSMAT_CSR");
   size_t matrix_type_size = matrix_type.size();
 
   /* Save explicitly matrix properties */
-  matfp.write ((const char*) &matrix_type_size, sizeof(size_t));
-  matfp.write ((const char*) matrix_type.c_str(), matrix_type_size);
+  matfp.write (reinterpret_cast<const char*>(&matrix_type_size), sizeof(size_t));
+  matfp.write (reinterpret_cast<const char*>(matrix_type.c_str()), matrix_type_size);
 
   /* Save fileformat {BIN, SNAPPY} */
-  matfp.write ((const char*) &fileformat, sizeof(int));
+  matfp.write (reinterpret_cast<const char*>(&fileformat), sizeof(int));
 
   /* Printing offsets of the matrix if needed */
-  matfp.write ((const char*) &offl, sizeof(uint64_t));
-  matfp.write ((const char*) &offc, sizeof(uint64_t));
+  matfp.write (reinterpret_cast<const char*>(&offl), sizeof(uint64_t));
+  matfp.write (reinterpret_cast<const char*>(&offc), sizeof(uint64_t));
 
   /* Matrix dimension */
-  matfp.write ((const char*) &m, sizeof(idx_t));
-  matfp.write ((const char*) &nnz, sizeof(uint64_t));
+  matfp.write (reinterpret_cast<const char*>(&m), sizeof(idx_t));
+  matfp.write (reinterpret_cast<const char*>(&nnz), sizeof(uint64_t));
 
   if (fileformat == BIN) {
-    matfp.write ((const char*) ia.data(), ia.size()*sizeof(uint64_t));
-    matfp.write ((const char*) ja.data(), ja.size()*sizeof(idx_t));
+    matfp.write (reinterpret_cast<const char*>(ia.data()), ia.size()*sizeof(uint64_t));
+    matfp.write (reinterpret_cast<const char*>(ja.data()), ja.size()*sizeof(idx_t));
 
   } else if (fileformat == SNAPPY) {
+<<<<<<< HEAD
     size_t ia_snappy_size = max_compress_size(ia.size()*sizeof(uint64_t));
     char* ia_snappy = new char [ia_snappy_size];
 
@@ -170,6 +179,22 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
     matfp.write ((const char*) &ja_snappy_size, sizeof(size_t));
     matfp.write ((const char*) ja_snappy, ja_snappy_size);
 
+=======
+    char* ia_snappy = new char [snappy::MaxCompressedLength(ia.size()*sizeof(uint64_t))];
+    size_t ia_snappy_size;
+    compress_snappy (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t), ia_snappy, ia_snappy_size);
+
+    matfp.write (reinterpret_cast<const char*>(&ia_snappy_size), sizeof(size_t));
+    matfp.write (reinterpret_cast<const char*>(ia_snappy), ia_snappy_size);
+    delete[] ia_snappy;
+
+    char* ja_snappy = new char [snappy::MaxCompressedLength(ja.size()*sizeof(idx_t))];
+    size_t ja_snappy_size;
+    compress_snappy (reinterpret_cast<char*>(ja.data()), (nnz)*sizeof(idx_t), ja_snappy, ja_snappy_size);
+
+    matfp.write (reinterpret_cast<const char*>(&ja_snappy_size), sizeof(size_t));
+    matfp.write (reinterpret_cast<const char*>(ja_snappy), ja_snappy_size);
+>>>>>>> develop
     delete[] ja_snappy;
   }
 
@@ -186,8 +211,9 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
 
   /* Save explicitly matrix properties */
   size_t matrix_type_size;
-  matfp.read ((char*) &matrix_type_size, sizeof(size_t));
+  matfp.read (reinterpret_cast<char*>(&matrix_type_size), sizeof(size_t));
 
+<<<<<<< HEAD
   char* matrix_type = new char [matrix_type_size+1];
   matfp.read ((char*) matrix_type, matrix_type_size);
   matrix_type[matrix_type_size] = '\0';
@@ -198,45 +224,59 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     oss << "Wrong matrix format, expected " << exp_matrix_type << " " << std::strlen(exp_matrix_type)
       << ", instead " << matrix_type << " " << std::strlen(matrix_type);
     gpe_error (oss.str());
+=======
+  char read_matrix_type[matrix_type_size];
+  matfp.read (reinterpret_cast<char*>(read_matrix_type), matrix_type_size);
+
+  if (std::strcmp (read_matrix_type, matrix_type.c_str()) != 0) {
+    err.str("");
+    err << "Wrong matrix format, found \'" << read_matrix_type << "\' while expecting \'"
+      << matrix_type << "\'";
+    gpe_error (err.str());
+>>>>>>> develop
     exit (-1);
   }
 
   /* Read fileformat {BIN, SNAPPY} */
   int fileformat;
-  matfp.read ((char*) &fileformat, sizeof(int));
+  matfp.read (reinterpret_cast<char*>(&fileformat), sizeof(int));
 
   /* Readingg offsets of the matrix if needed */
-  matfp.read ((char*) &offl, sizeof(uint64_t));
-  matfp.read ((char*) &offc, sizeof(uint64_t));
+  matfp.read (reinterpret_cast<char*>(&offl), sizeof(uint64_t));
+  matfp.read (reinterpret_cast<char*>(&offc), sizeof(uint64_t));
 
   /* Matrix dimension */
-  matfp.read ((char*) &m, sizeof(idx_t));
-  matfp.read ((char*) &nnz, sizeof(uint64_t));
+  matfp.read (reinterpret_cast<char*>(&m), sizeof(idx_t));
+  matfp.read (reinterpret_cast<char*>(&nnz), sizeof(uint64_t));
 
   if ((m+1)*sizeof(uint64_t) + nnz*sizeof(idx_t) < prop.ram_limit) {
     ia.resize (m+1, 0);
     ja.resize (nnz, 0);
     is_alloc = true;
   } else {
-    gpe_error ("Requested size is beyond \'RAMLIMIT\'");
+    gpe_error ("Requested size is beyond \'ram_limit\'");
     matfp.close();
     exit (-1);
   }
 
   if (fileformat == BIN) {
-    matfp.read ((char*) ia.data(), ia.size()*sizeof(uint64_t));
-    matfp.read ((char*) ja.data(), ja.size()*sizeof(idx_t));
+    matfp.read (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t));
+    matfp.read (reinterpret_cast<char*>(ja.data()), ja.size()*sizeof(idx_t));
 
   } else if (fileformat == SNAPPY) {
     bool uncomp_succeed;
 
     size_t ia_snappy_size;
-    matfp.read ((char*) &ia_snappy_size, sizeof(size_t));
+    matfp.read (reinterpret_cast<char*>(&ia_snappy_size), sizeof(size_t));
 
     char* ia_snappy = new char [ia_snappy_size];
-    matfp.read ((char*) ia_snappy, ia_snappy_size);
+    matfp.read (reinterpret_cast<char*>(ia_snappy), ia_snappy_size);
 
+<<<<<<< HEAD
     uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, (char*)ia.data(), (m+1)*sizeof(uint64_t));
+=======
+    uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, reinterpret_cast<char*>(ia.data()), (m+1)*sizeof(idx_t));
+>>>>>>> develop
     delete[] ia_snappy;
 
     if (!uncomp_succeed) {
@@ -247,12 +287,16 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     }
 
     size_t ja_snappy_size;
-    matfp.read ((char*) &ja_snappy_size, sizeof(size_t));
+    matfp.read (reinterpret_cast<char*>(&ja_snappy_size), sizeof(size_t));
 
     char* ja_snappy = new char [ja_snappy_size];
-    matfp.read ((char*) ja_snappy, ja_snappy_size);
+    matfp.read (reinterpret_cast<char*>(ja_snappy), ja_snappy_size);
 
+<<<<<<< HEAD
     uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, (char*)ja.data(), (nnz)*sizeof(idx_t));
+=======
+    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, reinterpret_cast<char*>(ja.data()), nnz*sizeof(idx_t));
+>>>>>>> develop
     delete[] ja_snappy;
 
     if (!uncomp_succeed) {
@@ -285,9 +329,15 @@ bool gpe_bsmat_csr<idx_t>::verify () {
   if (nnz == ia[m]) {
     return true;
   } else {
+<<<<<<< HEAD
     std::ostringstream oss;
     oss << "Wrong matrix : M = " << m << "; NNZ = " << nnz << "; IA[M] = " << ia[m];
     gpe_error (oss.str());
+=======
+    wrn.str("");
+    wrn << "NNZ = " << nnz << " IA[M+1] = " << ia[m+1];
+    gpe_warning (wrn.str());
+>>>>>>> develop
     return false;
   }
 }
