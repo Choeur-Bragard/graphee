@@ -340,7 +340,7 @@ void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, ui
   uint64_t nnz = filelen/(2*sizeof(uint64_t));
   uint64_t nsections = filelen/props.sort_limit + (filelen%props.sort_limit == 0 ? 0 : 1);
 
-  size_t alloc_needs = (props.window+1)*sizeof(uint64_t) + (nnz)*sizeof(gpe_mat_t::index_type);
+  size_t alloc_needs = (props.window+1)*sizeof(uint64_t) + (nnz)*sizeof(typename gpe_mat_t::index_type);
 
   if (alloc_needs > props.ram_limit) {
     mtx->lock();
@@ -430,14 +430,14 @@ void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, ui
   if (!mat.verify()) {
     mtx->lock();
     err.str("");
-    err << "Block [" << line << ";" << col << "] conversion to \'" << gpe_mat_t::matrix_type << "\' failed !";
+    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' failed !";
     gpe_error (err.str());
     mtx->unlock();
     return;
   } else {
     mtx->lock();
     log.str("");
-    log << "Block [" << line << ";" << col << "] conversion to \'" << gpe_mat_t::matrix_type << "\' succeed !";
+    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' succeed !";
     gpe_log (log.str());
     mtx->unlock();
   }

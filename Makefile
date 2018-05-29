@@ -1,7 +1,7 @@
 CC = g++
 OPT = -std=c++11 -O3 -pthread
 INC = -I src/.
-LIB = -lgzstream -lsnappy
+LIB = -lgzstream -lsnappy -lz -lm
 
 examples: split load
 
