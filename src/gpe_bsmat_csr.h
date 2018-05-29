@@ -160,16 +160,16 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
     matfp.write (reinterpret_cast<const char*>(ja.data()), ja.size()*sizeof(idx_t));
 
   } else if (fileformat == SNAPPY) {
-    char* ia_snappy = new char [snappy::MaxCompressedLength(ia.size()*sizeof(uint64_t))];
-    size_t ia_snappy_size;
+    size_t ia_snappy_size = max_compress_size (ia.size()*sizeof(uint64_t));
+    char* ia_snappy = new char [ia_snappy_size];
     compress_snappy (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t), ia_snappy, ia_snappy_size);
 
     matfp.write (reinterpret_cast<const char*>(&ia_snappy_size), sizeof(size_t));
     matfp.write (reinterpret_cast<const char*>(ia_snappy), ia_snappy_size);
     delete[] ia_snappy;
 
-    char* ja_snappy = new char [snappy::MaxCompressedLength(ja.size()*sizeof(idx_t))];
-    size_t ja_snappy_size;
+    size_t ja_snappy_size = max_compress_size (ja.size()*sizeof(idx_t));
+    char* ja_snappy = new char [ja_snappy_size];
     compress_snappy (reinterpret_cast<char*>(ja.data()), (nnz)*sizeof(idx_t), ja_snappy, ja_snappy_size);
 
     matfp.write (reinterpret_cast<const char*>(&ja_snappy_size), sizeof(size_t));

@@ -79,6 +79,7 @@ gpe_diskmat<gpe_mat_t>::gpe_diskmat (gpe_props arg_props, std::string arg_matrix
   matrix_name = arg_matrix_name;
   tmpfp = new std::fstream [props.nblocks];
 }
+
 template <class gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   close_tmp_blocks ();
@@ -477,7 +478,7 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
         err.str("");
         err << "Could not open file: " << blockname.str();
         gpe_error (err.str());
-        //exit(-1);
+        exit(-1);
       }
     }
   }
