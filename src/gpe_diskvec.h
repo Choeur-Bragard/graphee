@@ -58,7 +58,13 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
 template <class gpe_vec_t>
 gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name, size_t n, 
   typename gpe_vec_t::value_type init_val) {
-  gpe_diskvec (arg_props, arg_vec_name);
+  props = arg_props;
+  vec_name = arg_vec_name;
+
+  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
+    gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
+    exit (-1);
+  }
 
   for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
     gpe_vec_t vec (props, props.window, init_val);
