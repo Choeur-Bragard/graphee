@@ -1,8 +1,9 @@
 # To-Do list
-- [ ] Include both PageRank and CUDA PageRank :zap:
+- [ ] :warning: Add a `swap` function to `gpe_diskvec`
+- [ ] :zap: Include both PageRank and CUDA PageRank 
 - [x] Verify the implementation of `gpe_diskmat`
 - [x] Implement DCSR sparse matrix format
-- [ ] Add to DCSR format `insert` and `remove` members :zap:
+- [ ] :zap: Add to DCSR format `insert` and `remove` members
 - [x] Writing the class `gpe_diskvec` and `gpe_vec`
 - [x] Think to a slighter template format, for both `gpe_diskvec` and `gpe_diskmat`
 - [ ] Think to a fixed `gpe_props.window` logic
