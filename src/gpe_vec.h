@@ -17,19 +17,18 @@ class gpe_vec : public std::vector<val_t> {
 public:
   enum {BIN, SNAPPY};
 
-  gpe_vec (gpe_props& i_prop, std::string i_name) : 
+  gpe_vec (gpe_props& i_prop) : 
     std::vector<val_t>() {}
 
-  gpe_vec (gpe_props& i_prop, std::string i_name, size_t n, val_t init_val = 0) :
+  gpe_vec (gpe_props& i_prop, size_t n, val_t init_val = 0) :
     std::vector<val_t> (n, init_val) {}
 
   ~gpe_vec ();
 
-  void save (int fileformat = BIN);
-  void load ();
+  void save (std::string name, int fileformat = BIN, uint64_t offl = 0);
+  void load (std::string name);
 
-private:
-  std::string name;
+  typedef val_t value_type;
 }; // class gpe_vec
 
 } // namespace graphee
