@@ -17,13 +17,13 @@ class gpe_vec : public std::vector<val_t> {
 public:
   enum {BIN, SNAPPY};
 
-  gpe_vec (gpe_props& i_prop) : 
-    std::vector<val_t>() {}
+  gpe_vec (gpe_props& props) : 
+    std::vector<val_t>(), props(props) {}
 
-  gpe_vec (gpe_props& i_prop, size_t n, val_t init_val = 0) :
-    std::vector<val_t> (n, init_val) {}
+  gpe_vec (gpe_props& props, size_t n, val_t init_val = 0) :
+    std::vector<val_t> (n, init_val), props(props) {}
 
-  ~gpe_vec ();
+  ~gpe_vec () {}
 
   void save (std::string name, int fileformat = BIN, uint64_t offl = 0);
   void load (std::string name);
@@ -32,18 +32,23 @@ public:
   const std::string vector_type {"GPE_VEC"};
 
 private:
+  std::ostringstream log;
+  std::ostringstream wrn;
+  std::ostringstream err;
+
+  gpe_props props;
   uint64_t offl;
 
 }; // class gpe_vec
 
 template <class val_t>
-void gpe_vec<val_t>::save (std::string name, int fileformat = BIN, uint64_t offl = 0) {
+void gpe_vec<val_t>::save (std::string name, int fileformat, uint64_t offl) {
   std::ofstream vecfp (name, std::ios_base::binary);
 
-  size_t vec_type_size = vec_type.size();
+  size_t vector_type_size = vector_type.size();
 
   /* Save explicitly vector properties */
-  vecfp.write (reinterpret_cast<const char*>(&vec_type_size), sizeof(size_t));
+  vecfp.write (reinterpret_cast<const char*>(&vector_type_size), sizeof(size_t));
   vecfp.write (reinterpret_cast<const char*>(vector_type.c_str()), vector_type_size);
 
   /* Save fileformat {BIN, SNAPPY} */
@@ -53,7 +58,8 @@ void gpe_vec<val_t>::save (std::string name, int fileformat = BIN, uint64_t offl
   vecfp.write (reinterpret_cast<const char*>(&offl), sizeof(uint64_t));
 
   /* Vector dimension */
-  vecfp.write (reinterpret_cast<const char*>(&(this->size())), sizeof(size_t));
+  size_t vec_size = this->size();
+  vecfp.write (reinterpret_cast<const char*>(&vec_size), sizeof(size_t));
 
   if (fileformat == BIN) {
     vecfp.write (reinterpret_cast<const char*>(this->data()), this->size()*sizeof(val_t));
@@ -68,19 +74,19 @@ void gpe_vec<val_t>::save (std::string name, int fileformat = BIN, uint64_t offl
     delete[] vec_snappy;
   }
 
-  vec.close();
+  vecfp.close();
 }
 
 template <class val_t>
-void gpe_diskvec<val_t>::load (std::string name) {
+void gpe_vec<val_t>::load (std::string name) {
   std::ifstream vecfp (name, std::ios_base::binary);
 
   /* Save explicitly vector properties */
-  size_t vec_type_size;
-  vecfp.read (reinterpret_cast<char*>(&vec_type_size), sizeof(size_t));
+  size_t vector_type_size;
+  vecfp.read (reinterpret_cast<char*>(&vector_type_size), sizeof(size_t));
 
-  char read_vec_type[vec_type_size];
-  vecfp.read (reinterpret_cast<char*>(read_vector_type), vec_type_size);
+  char read_vector_type[vector_type_size];
+  vecfp.read (reinterpret_cast<char*>(read_vector_type), vector_type_size);
 
   if (std::strcmp (read_vector_type, vector_type.c_str()) != 0) {
     err.str("");
@@ -110,7 +116,7 @@ void gpe_diskvec<val_t>::load (std::string name) {
   }
 
   if (fileformat == BIN) {
-    matfp.read (reinterpret_cast<char*>(this->data()), this->size()*sizeof(val_t));
+    vecfp.read (reinterpret_cast<char*>(this->data()), this->size()*sizeof(val_t));
 
   } else if (fileformat == SNAPPY) {
     bool uncomp_succeed;

@@ -9,6 +9,7 @@
 
 #include "gpe_utils.h"
 #include "gpe_diskmat.h"
+#include "gpe_vec.h"
 
 /* \brief Vector saved by slices within disk
  *
@@ -28,7 +29,7 @@ public:
   gpe_diskvec (gpe_props props, std::string vec_name, size_t n, 
     typename gpe_vec_t::value_type init_val = 0);
 
-  ~gpe_diskvec ();
+  ~gpe_diskvec () {}
 
   void get_vector_slice (uint64_t sliceID, gpe_vec_t& vec);
 
@@ -48,7 +49,7 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
   props = arg_props;
   vec_name = arg_vec_name;
 
-  if (props.window*sizeof(gpe_vec_t::value_type) > props.ram_limit) {
+  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
     gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
     exit (-1);
   }
@@ -81,7 +82,7 @@ void gpe_diskvec<gpe_vec_t>::get_vector_slice (uint64_t sliceID, gpe_vec_t& vec)
 template <class gpe_vec_t>
 std::string gpe_diskvec<gpe_vec_t>::get_slice_filename (uint64_t sliceID) {
   std::ostringstream slicename;
-  slicename << props.name << "_" << vec_name << "_dvecslc_" << line << "_" << col << ".gpe";
+  slicename << props.name << "_" << vec_name << "_dvecslc_" << sliceID << ".gpe";
   return slicename.str();
 }
 
