@@ -66,14 +66,8 @@ private:
   static void load_GZ (const std::string filename, std::stringstream* ss,
       std::mutex* read_mtx);
 
-<<<<<<< HEAD
-  void csr_manager ();
-
-  static void csr_builder (gpe_diskmat<gpe_mat_t,idx_t>* dmat, uint64_t line, uint64_t col,
-=======
   void diskblock_manager ();
   static void diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
->>>>>>> develop
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
 
   std::string get_block_filename (uint64_t line, uint64_t col);
@@ -88,17 +82,11 @@ gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   delete [] tmpfp;
 }
 
-<<<<<<< HEAD
-template <class gpe_mat_t, class idx_t>
-void gpe_diskmat<gpe_mat_t, idx_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  read_and_split_list (filenames, ftype);
-  csr_manager ();
-=======
+
 template <class gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
   //read_and_split_list (filenames, ftype);
   diskblock_manager ();
->>>>>>> develop
 }
 
 template <class gpe_mat_t>
@@ -325,11 +313,7 @@ void gpe_diskmat<gpe_mat_t>::diskblock_manager () {
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
-<<<<<<< HEAD
-      csr_threads.push_back(std::thread(csr_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
-=======
       diskblock_threads.push_back(std::thread(diskblock_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
->>>>>>> develop
     }
   }
 
@@ -482,15 +466,9 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
-<<<<<<< HEAD
-      oss.str("");
-      oss << props.name << "_tmpblk_" << line << "_" << col << ".gpe";
-      tmpfp[bid].open(oss.str(), mode);
-=======
       blockname.str("");
       blockname << props.name << "_" << mat_name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(blockname.str(), mode);
->>>>>>> develop
 
       if (!tmpfp[bid].is_open()) {
         err.str("");

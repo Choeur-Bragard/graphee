@@ -22,15 +22,10 @@ int main (int argc, char** argv) {
   dmat.get_matrix_block (0, 0, smat);
 
   if (smat.verify()) {
-<<<<<<< HEAD
-    return 0;
-  } else {
-=======
     gpe_log ("Correct loading of the matrix");
     return 0;
   } else {
     gpe_error ("Incorrect loading of the matrix");
->>>>>>> develop
     return -1;
   }
 }
