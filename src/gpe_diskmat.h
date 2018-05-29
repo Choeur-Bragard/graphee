@@ -66,8 +66,8 @@ private:
   static void load_GZ (const std::string filename, std::stringstream* ss,
       std::mutex* read_mtx);
 
-  void csr_manager ();
-  static void csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
+  void diskblock_manager ();
+  static void diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond);
 
   std::string get_block_filename (uint64_t line, uint64_t col);
@@ -85,19 +85,19 @@ gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
 template <class gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
   //read_and_split_list (filenames, ftype);
-  csr_manager ();
+  diskblock_manager ();
 }
 
 template <class gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat) {
   log.str("");
-  log << "Start to load CSR block [" << line << ":" << col << "]";
+  log << "Start to load disk block [" << line << ":" << col << "]";
   gpe_log (log.str());
 
   mat.load(get_block_filename(line, col));
 
   log.str("");
-  log << "Loaded CSR block [" << line << ":" << col << "]";
+  log << "Loaded disk block [" << line << ":" << col << "]";
   gpe_log (log.str());
 }
 
@@ -298,8 +298,8 @@ void gpe_diskmat<gpe_mat_t>::sort_and_save_list (uint64_t* block, uint64_t nelem
 }
 
 template <class gpe_mat_t>
-void gpe_diskmat<gpe_mat_t>::csr_manager () {
-  std::vector<std::thread> csr_threads;
+void gpe_diskmat<gpe_mat_t>::diskblock_manager () {
+  std::vector<std::thread> diskblock_threads;
 
   open_tmp_blocks (std::ios_base::in | std::ios_base::binary);
 
@@ -312,13 +312,13 @@ void gpe_diskmat<gpe_mat_t>::csr_manager () {
   for (uint64_t line = 0; line < props.nslices; line++) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
-      csr_threads.push_back(std::thread(csr_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
+      diskblock_threads.push_back(std::thread(diskblock_builder, this, line, col, (&tmpfp[bid]), &alloc_mem, &mtx, &cond));
     }
   }
 
   for (uint64_t i = 0; i < props.nblocks; i++) {
-    if (csr_threads[i].joinable()) {
-      csr_threads[i].join();
+    if (diskblock_threads[i].joinable()) {
+      diskblock_threads[i].join();
     }
   }
 
@@ -326,7 +326,7 @@ void gpe_diskmat<gpe_mat_t>::csr_manager () {
 }
 
 template <class gpe_mat_t>
-void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
+void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
   std::ostringstream log;
   std::ostringstream err;
@@ -345,7 +345,7 @@ void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t
   if (alloc_needs > props.ram_limit) {
     mtx->lock();
     err.str("");
-    err << "CSR block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
+    err << "Disk block [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 30) << "GB";
     gpe_error (err.str());
     err.str("");
     err << "which is more memory than \'ram_limit\' " << props.ram_limit/(1UL << 30) << "GB";
@@ -355,7 +355,7 @@ void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t
   } else {
     mtx->lock();
     log.str("");
-    log << "Starting CSR block conversion [" << line << ";" << col << "]";
+    log << "Starting disk block conversion [" << line << ";" << col << "]";
     gpe_log (log.str());
     mtx->unlock();
   }
@@ -430,14 +430,14 @@ void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t
   if (!mat.verify()) {
     mtx->lock();
     err.str("");
-    err << "Block [" << line << ";" << col << "] wrong conversion to CSR";
+    err << "Block [" << line << ";" << col << "] conversion to \'" << gpe_mat_t::matrix_type << "\' failed !";
     gpe_error (err.str());
     mtx->unlock();
     return;
   } else {
     mtx->lock();
     log.str("");
-    log << "Block [" << line << ";" << col << "] conversion to CSR succeed !";
+    log << "Block [" << line << ";" << col << "] conversion to \'" << gpe_mat_t::matrix_type << "\' succeed !";
     gpe_log (log.str());
     mtx->unlock();
   }
@@ -453,9 +453,9 @@ void gpe_diskmat<gpe_mat_t>::csr_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t
 
 template <class gpe_mat_t>
 std::string gpe_diskmat<gpe_mat_t>::get_block_filename (uint64_t line, uint64_t col) {
-  std::ostringstream csr_blockname;
-  csr_blockname << props.name << "_" << mat_name << "_csrblk_" << line << "_" << col << ".gpe";
-  return csr_blockname.str();
+  std::ostringstream matrixname;
+  matrixname << props.name << "_" << mat_name << "_dmatblk_" << line << "_" << col << ".gpe";
+  return matrixname.str();
 }
 
 template <class gpe_mat_t>

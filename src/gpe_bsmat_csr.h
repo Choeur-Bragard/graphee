@@ -46,8 +46,10 @@ public:
   bool verify ();
   idx_t last_id {0};
 
-  typedef idx_t index_type;
-  typedef bool value_type;
+  const typedef idx_t index_type;
+  const typedef bool value_type;
+
+  const std::string matrix_type {"GPE_BSMAT_CSR"};
 
 private:
   std::ostringstream log;
@@ -136,7 +138,6 @@ template <class idx_t>
 void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl, uint64_t) {
   std::ofstream matfp (name, std::ios_base::binary);
 
-  std::string matrix_type ("GPE_BSMAT_CSR");
   size_t matrix_type_size = matrix_type.size();
 
   /* Save explicitly matrix properties */
@@ -191,12 +192,14 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   size_t matrix_type_size;
   matfp.read (static_cast<char*>(&matrix_type_size), sizeof(size_t));
 
-  char matrix_type[matrix_type_size];
-  matfp.read (static_cast<char*>(matrix_type), matrix_type_size);
+  char read_matrix_type[matrix_type_size];
+  matfp.read (static_cast<char*>(read_matrix_type), matrix_type_size);
 
-  char exp_matrix_type[] = "GPE_BSMAT_CSR";
-  if (std::strcmp (matrix_type, exp_matrix_type) != 0) {
-    gpe_error ("Wrong matrix format, expected GPE_BSMAT_CSR");
+  if (std::strcmp (read_matrix_type, matrix_type.c_str()) != 0) {
+    err.str("");
+    err << "Wrong matrix format, found \'" << read_matrix_type << "\' while expecting \'"
+      << matrix_type << "\'";
+    gpe_error (err.str());
     exit (-1);
   }
 
@@ -235,7 +238,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     char* ia_snappy = new char [ia_snappy_size];
     matfp.read (static_cast<char*>(ia_snappy), ia_snappy_size);
 
-    uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, static_cast<char*>(ia.data()), m+1);
+    uncomp_succeed = uncompress_snappy (ia_snappy, ia_snappy_size, static_cast<char*>(ia.data()), (m+1)*sizeof(val_t));
     delete[] ia_snappy;
 
     if (!uncomp_succeed) {
@@ -251,7 +254,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     char* ja_snappy = new char [ja_snappy_size];
     matfp.read (static_cast<char*>(ja_snappy), ja_snappy_size);
 
-    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, static_cast<char*>(ja.data()), nnz);
+    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, static_cast<char*>(ja.data()), nnz*sizeof(idx_t));
     delete[] ja_snappy;
 
     if (!uncomp_succeed) {
