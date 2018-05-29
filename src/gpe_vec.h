@@ -59,8 +59,8 @@ void gpe_vec<val_t>::save (std::string name, int fileformat = BIN, uint64_t offl
     vecfp.write (reinterpret_cast<const char*>(this->data()), this->size()*sizeof(val_t));
 
   } else if (fileformat == SNAPPY) {
-    char* vec_snappy = new char [snappy::MaxCompressedLength(this->size()*sizeof(val_t))];
-    size_t vec_snappy_size;
+    size_t vec_snappy_size = max_compress_size(this->size()*sizeof(val_t));
+    char* vec_snappy = new char [vec_snappy_size];
     compress_snappy (reinterpret_cast<char*>(this->data()), this->size()*sizeof(val_t), vec_snappy, vec_snappy_size);
 
     vecfp.write (reinterpret_cast<const char*>(&vec_snappy_size), sizeof(size_t));

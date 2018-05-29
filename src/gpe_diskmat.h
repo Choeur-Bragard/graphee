@@ -31,10 +31,7 @@ namespace graphee {
 template <class gpe_mat_t>
 class gpe_diskmat {
 public:
-  gpe_diskmat (gpe_props props, std::string mat_name) :
-    props(props), mat_name(mat_name) {
-    tmpfp = new std::fstream [props.nblocks];
-  }
+  gpe_diskmat (gpe_props props, std::string matrix_name);
 
   ~gpe_diskmat ();
 
@@ -56,7 +53,7 @@ private:
 
   std::fstream *tmpfp;
 
-  std::string mat_name;
+  std::string matrix_name;
 
   void read_and_split_list (const std::vector<std::string>& filenames, int ftype);
 
@@ -77,10 +74,18 @@ private:
 };
 
 template <class gpe_mat_t>
+gpe_diskmat<gpe_mat_t>::gpe_diskmat (gpe_props arg_props, std::string arg_matrix_name) {
+  props = arg_props;
+  matrix_name = arg_matrix_name;
+  tmpfp = new std::fstream [props.nblocks];
+}
+
+template <class gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   close_tmp_blocks ();
   delete [] tmpfp;
 }
+
 
 template <class gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
@@ -454,7 +459,7 @@ void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, ui
 template <class gpe_mat_t>
 std::string gpe_diskmat<gpe_mat_t>::get_block_filename (uint64_t line, uint64_t col) {
   std::ostringstream matrixname;
-  matrixname << props.name << "_" << mat_name << "_dmatblk_" << line << "_" << col << ".gpe";
+  matrixname << props.name << "_" << matrix_name << "_dmatblk_" << line << "_" << col << ".gpe";
   return matrixname.str();
 }
 
@@ -466,12 +471,12 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
     for (uint64_t col = 0; col < props.nslices; col++) {
       uint64_t bid = line + col*props.nslices;
       blockname.str("");
-      blockname << props.name << "_" << mat_name << "_tmpblk_" << line << "_" << col << ".gpe";
+      blockname << props.name << "_" << matrix_name << "_tmpblk_" << line << "_" << col << ".gpe";
       tmpfp[bid].open(blockname.str(), mode);
 
       if (!tmpfp[bid].is_open()) {
         err.str("");
-        err << "Could not open file" << blockname.str();
+        err << "Could not open file: " << blockname.str();
         gpe_error (err.str());
         exit(-1);
       }
@@ -482,13 +487,9 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
 template <class gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::close_tmp_blocks () {
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
-    if (!tmpfp[bid].is_open()) {
-      err.str("");
-      err << "Could not close file BID = " << bid << std::endl;
-      gpe_error (err.str());
-      exit(-1);
+    if (tmpfp[bid].is_open()) {
+      tmpfp[bid].close();
     }
-    tmpfp[bid].close();
   }
 }
 
