@@ -31,7 +31,7 @@ public:
   template <typename gpe_mat_t>
   void mat_vec_prod (gpe_mat_t& mat, gpe_vec<val_t>& vec);
 
-  using value_type = val_t;
+  typedef val_t value_type;
 
   const std::string vector_type {"GPE_VEC"};
 

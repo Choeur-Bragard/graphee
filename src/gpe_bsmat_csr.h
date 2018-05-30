@@ -46,8 +46,8 @@ public:
   bool verify ();
   idx_t last_id {0};
 
-  using index_type = idx_t;
-  using value_type = bool;
+  typedef idx_t index_type;
+  typedef bool value_type;
 
   const std::string matrix_type {"GPE_BSMAT_CSR"};
 

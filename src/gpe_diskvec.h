@@ -38,7 +38,7 @@ public:
   template <typename gpe_dmat_t, typename gpe_dvec_t>
   void mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec);
 
-  const typedef gpe_vec_t vector_type;
+  typedef gpe_vec_t vector_type;
 
 private:
   gpe_props props;
