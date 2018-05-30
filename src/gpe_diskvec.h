@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 
+#include <cstdio>
+
 #include "gpe_utils.h"
 #include "gpe_diskmat.h"
 #include "gpe_vec.h"
@@ -32,6 +34,8 @@ public:
   ~gpe_diskvec () {}
 
   void get_vector_slice (uint64_t sliceID, gpe_vec_t& vec);
+
+  void swap (gpe_diskvec<gpe_vec_t>& vec);
 
 private:
   gpe_props props;
@@ -90,6 +94,45 @@ std::string gpe_diskvec<gpe_vec_t>::get_slice_filename (uint64_t sliceID) {
   std::ostringstream slicename;
   slicename << props.name << "_" << vec_name << "_dvecslc_" << sliceID << ".gpe";
   return slicename.str();
+}
+
+template <class gpe_vec_t>
+void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
+  if (props.nvertices != vec.props.nvertices) {
+    err.str("");
+    err << "Could not swap vector \'" << vec_name << "\' and \'";
+    err << vec.vec_name << "\' because dimensions are not equal";
+    gpe_error (err.str());
+  }
+
+  int succed;
+  std::ostringstream tmpname;
+  tmpname << vec_name << "_swap_file.gpe";
+  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
+    succed = rename (get_slice_filename(sliceID), tmpname.str());
+    if (succed != 0) {
+      err.str("");
+      err << "Could not swap vector \'" << get_slice_filename(sliceID) << "\' to \'";
+      err << tmpname.str() << "\'";
+      gpe_error (err.str());
+    }
+
+    succed = rename (vec.get_slice_filename(sliceID), get_slice_filename(sliceID));
+    if (succed != 0) {
+      err.str("");
+      err << "Could not swap vector \'" << vec.get_slice_filename(sliceID) << "\' to \'";
+      err << get_slice_filename(sliceID) << "\'";
+      gpe_error (err.str());
+    }
+
+    succed = rename (tmpname.str(), vec.get_slice_filename(sliceID));
+    if (succed != 0) {
+      err.str("");
+      err << "Could not swap vector \'" << tmpname.str() << "\' to \'";
+      err << vec.get_slice_filename(sliceID) << "\'";
+      gpe_error (err.str());
+    }
+  }
 }
 
 } // namesapce graphee
