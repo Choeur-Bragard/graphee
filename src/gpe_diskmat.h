@@ -11,13 +11,11 @@
 #include <mutex>
 #include <condition_variable>
 #include <algorithm>
-#include <chrono>
 
 #include <gzstream.h>
-#include <snappy.h> // SNAPPY Compression Google Inc.
+#include <snappy.h>
 
-#include "gpe_bsmat_csr.h"
-#include "gpe_props.h"
+#include "graphee.h"
 
 #define SORT_NAME gpe
 #define SORT_TYPE uint64_t*

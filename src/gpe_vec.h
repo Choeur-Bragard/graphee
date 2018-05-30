@@ -7,8 +7,7 @@
 #include <vector>
 #include <string>
 
-#include "gpe_props.h"
-#include "gpe_utils.h"
+#include "graphee.h"
 
 namespace graphee {
 
