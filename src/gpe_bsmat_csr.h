@@ -197,8 +197,9 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   size_t matrix_type_size;
   matfp.read (reinterpret_cast<char*>(&matrix_type_size), sizeof(size_t));
 
-  char read_matrix_type[matrix_type_size];
+  char read_matrix_type[matrix_type_size+1];
   matfp.read (reinterpret_cast<char*>(read_matrix_type), matrix_type_size);
+  read_matrix_type[matrix_type_size] = '\0';
 
   if (std::strcmp (read_matrix_type, matrix_type.c_str()) != 0) {
     err.str("");

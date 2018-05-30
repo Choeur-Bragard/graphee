@@ -89,8 +89,9 @@ void gpe_vec<val_t>::load (std::string name) {
   size_t vector_type_size;
   vecfp.read (reinterpret_cast<char*>(&vector_type_size), sizeof(size_t));
 
-  char read_vector_type[vector_type_size];
+  char read_vector_type[vector_type_size+1];
   vecfp.read (reinterpret_cast<char*>(read_vector_type), vector_type_size);
+  read_vector_type[vector_type_size] = '\0';
 
   if (std::strcmp (read_vector_type, vector_type.c_str()) != 0) {
     err.str("");
