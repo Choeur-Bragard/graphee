@@ -44,7 +44,7 @@ public:
   static const int TRANS  = 0x00000010; 
   static const int UO     = 0x00000100; 
 
-  using matrix_type = gpe_mat_t;
+  const typedef gpe_mat_t matrix_type;
 
 private:
   std::ostringstream log;

@@ -29,7 +29,7 @@ public:
   void load (std::string name);
 
   template <typename gpe_mat_t>
-  void mat_vec_prod (const gpe_mat_t& mat, const gpe_vec<val_t>& vec);
+  void mat_vec_prod (gpe_mat_t& mat, gpe_vec<val_t>& vec);
 
   using value_type = val_t;
 
@@ -147,10 +147,10 @@ void gpe_vec<val_t>::load (std::string name) {
 
 template <typename val_t>
 template <typename gpe_mat_t>
-void gpe_vec<val_t>::mat_vec_prod (const gpe_mat_t& mat, const gpe_vec<val_t>& vec) {
+void gpe_vec<val_t>::mat_vec_prod (gpe_mat_t& mat, gpe_vec<val_t>& vec) {
   for (uint64_t id = 0; id < mat.m; id++) {
     for (uint64_t colid = mat.ia[id]; colid < mat.ia[id+1]; colid++) {
-      vec[id] += vec[mat.ja[colid]];
+      this->at(id) += vec[mat.ja[colid]];
     }
   }
 }

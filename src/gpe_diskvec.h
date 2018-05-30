@@ -35,10 +35,10 @@ public:
 
   void swap (gpe_diskvec<gpe_vec_t>& vec);
 
-  template <typename gpe_mat_t>
-  void mat_vec_prod (const gpe_diskmat<gpe_mat_t>& dmat, const gpe_diskvec<gpe_vec_t>& dvec);
+  template <typename gpe_dmat_t, typename gpe_dvec_t>
+  void mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec);
 
-  using vector_type = gpe_vec_t;
+  const typedef gpe_vec_t vector_type;
 
 private:
   gpe_props props;
@@ -113,7 +113,7 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
   std::ostringstream tmpname;
   tmpname << vec_name << "_swap_file.gpe";
   for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
-    succed = rename (get_slice_filename(sliceID), tmpname.str());
+    succed = rename (get_slice_filename(sliceID).c_str(), tmpname.str().c_str());
     if (succed != 0) {
       err.str("");
       err << "Could not swap vector \'" << get_slice_filename(sliceID) << "\' to \'";
@@ -121,7 +121,7 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
       gpe_error (err.str());
     }
 
-    succed = rename (vec.get_slice_filename(sliceID), get_slice_filename(sliceID));
+    succed = rename (vec.get_slice_filename(sliceID).c_str(), get_slice_filename(sliceID).c_str());
     if (succed != 0) {
       err.str("");
       err << "Could not swap vector \'" << vec.get_slice_filename(sliceID) << "\' to \'";
@@ -129,7 +129,7 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
       gpe_error (err.str());
     }
 
-    succed = rename (tmpname.str(), vec.get_slice_filename(sliceID));
+    succed = rename (tmpname.str().c_str(), vec.get_slice_filename(sliceID).c_str());
     if (succed != 0) {
       err.str("");
       err << "Could not swap vector \'" << tmpname.str() << "\' to \'";
@@ -140,11 +140,11 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
 }
 
 template <typename gpe_vec_t>
-template <typename gpe_mat_t>
-void gpe_diskvec<gpe_vec_t>::mat_vec_prod (const gpe_diskmat<gpe_mat_t>& dmat, const gpe_diskvec<gpe_vec_t>& dvec) {
+template <typename gpe_dmat_t, typename gpe_dvec_t>
+void gpe_diskvec<gpe_vec_t>::mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
   gpe_vec_t res (props);
-  gpe_vec_t vec_arg (props);
-  gpe_mat_t mat_arg (props);
+  typename gpe_dvec_t::vector_type vec_arg (props);
+  typename gpe_dmat_t::matrix_type mat_arg (props);
 
   for (uint64_t line = 0; line < props.nslices; line++) {
     get_vector_slice (line, res);
