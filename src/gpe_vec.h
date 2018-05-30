@@ -17,16 +17,19 @@ class gpe_vec : public std::vector<val_t> {
 public:
   enum {BIN, SNAPPY};
 
-  gpe_vec (gpe_props& props) : 
+  gpe_vec (gpe_props props) : 
     std::vector<val_t>(), props(props) {}
 
-  gpe_vec (gpe_props& props, size_t n, val_t init_val = 0) :
+  gpe_vec (gpe_props props, size_t n, val_t init_val = 0) :
     std::vector<val_t> (n, init_val), props(props) {}
 
   ~gpe_vec () {}
 
   void save (std::string name, int fileformat = BIN, uint64_t offl = 0);
   void load (std::string name);
+
+  template <typename gpe_mat_t>
+  void mat_vec_prod (const gpe_mat_t& mat, const gpe_vec<val_t>& vec);
 
   using value_type = val_t;
 
@@ -140,6 +143,16 @@ void gpe_vec<val_t>::load (std::string name) {
   }
   
   vecfp.close();
+}
+
+template <typename val_t>
+template <typename gpe_mat_t>
+void gpe_vec<val_t>::mat_vec_prod (const gpe_mat_t& mat, const gpe_vec<val_t>& vec) {
+  for (uint64_t id = 0; id < mat.m; id++) {
+    for (uint64_t colid = mat.ia[id]; colid < mat.ia[id+1]; colid++) {
+      vec[id] += vec[mat.ja[colid]];
+    }
+  }
 }
 
 } // namespace graphee

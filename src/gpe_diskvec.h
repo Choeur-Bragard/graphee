@@ -9,9 +9,7 @@
 
 #include <cstdio>
 
-#include "gpe_utils.h"
-#include "gpe_diskmat.h"
-#include "gpe_vec.h"
+#include "graphee.h"
 
 /* \brief Vector saved by slices within disk
  *
@@ -36,6 +34,9 @@ public:
   void get_vector_slice (uint64_t sliceID, gpe_vec_t& vec);
 
   void swap (gpe_diskvec<gpe_vec_t>& vec);
+
+  template <typename gpe_mat_t>
+  void mat_vec_prod (const gpe_diskmat<gpe_mat_t>& dmat, const gpe_diskvec<gpe_vec_t>& dvec);
 
   using vector_type = gpe_vec_t;
 
@@ -84,6 +85,7 @@ void gpe_diskvec<gpe_vec_t>::get_vector_slice (uint64_t sliceID, gpe_vec_t& vec)
   log << "Start to load vector slice [" << sliceID << "]";
   gpe_log (log.str());
 
+  vec.clear ();
   vec.load (get_slice_filename(sliceID));
 
   log.str("");
@@ -133,6 +135,24 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
       err << "Could not swap vector \'" << tmpname.str() << "\' to \'";
       err << vec.get_slice_filename(sliceID) << "\'";
       gpe_error (err.str());
+    }
+  }
+}
+
+template <typename gpe_vec_t>
+template <typename gpe_mat_t>
+void gpe_diskvec<gpe_vec_t>::mat_vec_prod (const gpe_diskmat<gpe_mat_t>& dmat, const gpe_diskvec<gpe_vec_t>& dvec) {
+  gpe_vec_t res (props);
+  gpe_vec_t vec_arg (props);
+  gpe_mat_t mat_arg (props);
+
+  for (uint64_t line = 0; line < props.nslices; line++) {
+    get_vector_slice (line, res);
+    for (uint64_t col = 0; col < props.nslices; col++) {
+      dvec.get_vector_slice (col, vec_arg);
+      dmat.get_matrix_block (line, col, mat_arg);
+
+      res.mat_vec_prod(mat_arg, vec_arg);
     }
   }
 }

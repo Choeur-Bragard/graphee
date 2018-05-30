@@ -28,8 +28,8 @@ class gpe_bsmat_csr{
 public:
   enum {BIN, SNAPPY};
 
-  gpe_bsmat_csr (gpe_props& i_prop);
-  gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz);
+  gpe_bsmat_csr (gpe_props i_prop);
+  gpe_bsmat_csr (gpe_props i_prop, idx_t i_m, idx_t i_nnz);
   ~gpe_bsmat_csr ();
 
   void sorted_fill (idx_t i, idx_t j);
@@ -50,6 +50,11 @@ public:
   using value_type = bool;
 
   const std::string matrix_type {"GPE_BSMAT_CSR"};
+
+  void clear ();
+
+  template <typename val_t>
+  friend class gpe_vec;
 
 private:
   std::ostringstream log;
@@ -72,7 +77,7 @@ private:
 
 /*! Clean constructor */
 template <typename idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop) {
+gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props i_prop) {
   prop = i_prop;
   m = 0;
   nnz = 0;
@@ -80,7 +85,7 @@ gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop) {
 
 /*! Constructor for predefined matrix size */
 template <typename idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz) {
+gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props i_prop, idx_t i_m, idx_t i_nnz) {
   prop = i_prop;
   m = i_m;
   nnz = i_nnz;
@@ -292,6 +297,19 @@ bool gpe_bsmat_csr<idx_t>::verify () {
     gpe_warning (wrn.str());
     return false;
   }
+}
+
+template <typename idx_t>
+void gpe_bsmat_csr<idx_t>::clear() {
+  ia.clear();
+  ja.clear();
+
+  m = 0;
+  nnz = 0;
+  offl = 0;
+  offc = 0;
+
+  is_alloc = false;
 }
 
 } // namespace graphee
