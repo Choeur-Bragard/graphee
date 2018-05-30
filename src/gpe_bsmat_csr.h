@@ -191,6 +191,7 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
  */
 template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::load (std::string name) {
+  this->clear ();
   std::ifstream matfp (name, std::ios_base::binary);
 
   /* Save explicitly matrix properties */

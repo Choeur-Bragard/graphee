@@ -154,6 +154,7 @@ void gpe_diskvec<gpe_vec_t>::mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
 
       res.mat_vec_prod(mat_arg, vec_arg);
     }
+    res.save (line);
   }
 }
 

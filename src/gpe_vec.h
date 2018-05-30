@@ -83,6 +83,7 @@ void gpe_vec<val_t>::save (std::string name, int fileformat, uint64_t offl) {
 
 template <class val_t>
 void gpe_vec<val_t>::load (std::string name) {
+  this->clear();
   std::ifstream vecfp (name, std::ios_base::binary);
 
   /* Save explicitly vector properties */
