@@ -3,7 +3,10 @@ OPT = -std=c++11 -O3 -pthread
 INC = -I src/.
 LIB = -lgzstream -lsnappy -lz -lm
 
-examples: split load vector matvecprod
+examples: split load vector matvecprod pagerank
+
+pagerank: examples/pagerank.cc src/gpe_utils.cc
+	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
 matvecprod: examples/matvecprod.cc src/gpe_utils.cc
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)

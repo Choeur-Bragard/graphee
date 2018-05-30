@@ -89,7 +89,7 @@ gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
 
 template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  //read_and_split_list (filenames, ftype);
+  read_and_split_list (filenames, ftype);
   diskblock_manager ();
 }
 

@@ -49,6 +49,8 @@ private:
   std::ostringstream err;
 
   std::string get_slice_filename (uint64_t sliceID);
+
+  void set_init_value (typename gpe_vec_t::value_type init_value);
 }; // class gpe_diskvec
 
 template <typename gpe_vec_t>
@@ -73,6 +75,7 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
     exit (-1);
   }
 
+  set_init_value (init_val);
   for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
     gpe_vec_t vec (props, props.window, init_val);
     vec.save (get_slice_filename(sliceID));
@@ -155,6 +158,14 @@ void gpe_diskvec<gpe_vec_t>::mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
       res.mat_vec_prod(mat_arg, vec_arg);
     }
     res.save (get_slice_filename(line));
+  }
+}
+
+template <typename gpe_vec_t>
+void gpe_diskvec<gpe_vec_t>::set_init_value (typename gpe_vec_t::value_type init_val) {
+  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
+    gpe_vec_t vec (props, props.window, init_val);
+    vec.save (get_slice_filename(sliceID));
   }
 }
 
