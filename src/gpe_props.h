@@ -42,13 +42,13 @@ public:
   ~gpe_props () {}
 
   std::string name;
-  uint64_t nthreads;
-  uint64_t nvertices;
-  uint64_t ram_limit;
-  uint64_t sort_limit;
-  uint64_t nslices;
-  uint64_t nblocks;
-  uint64_t window;
+  uint64_t nthreads {0};
+  uint64_t nvertices {0};
+  uint64_t ram_limit {0};
+  uint64_t sort_limit {0};
+  uint64_t nslices {0};
+  uint64_t nblocks {0};
+  uint64_t window {0};
 };
 
 } // namespace graphee

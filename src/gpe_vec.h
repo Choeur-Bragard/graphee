@@ -28,11 +28,13 @@ public:
   void load (std::string name);
 
   template <typename gpe_mat_t>
-  void mat_vec_prod (gpe_mat_t& mat, gpe_vec<val_t>& vec);
+  void alpha_mat_vec_prod (float alpha, gpe_mat_t& mat, gpe_vec<val_t>& vec);
 
   typedef val_t value_type;
 
   const std::string vector_type {"GPE_VEC"};
+
+  void operator+= (val_t val);
 
 private:
   std::ostringstream log;
@@ -148,11 +150,18 @@ void gpe_vec<val_t>::load (std::string name) {
 
 template <typename val_t>
 template <typename gpe_mat_t>
-void gpe_vec<val_t>::mat_vec_prod (gpe_mat_t& mat, gpe_vec<val_t>& vec) {
+void gpe_vec<val_t>::alpha_mat_vec_prod (float alpha, gpe_mat_t& mat, gpe_vec<val_t>& vec) {
   for (uint64_t id = 0; id < mat.m; id++) {
     for (uint64_t colid = mat.ia[id]; colid < mat.ia[id+1]; colid++) {
-      this->at(id) += vec[mat.ja[colid]];
+      this->at(id) += alpha*vec[mat.ja[colid]];
     }
+  }
+}
+
+template <typename val_t>
+void gpe_vec<val_t>::operator+= (val_t val) {
+  for (uint64_t id = 0; id < props.window; id++) {
+    this->at(id) += val;
   }
 }
 

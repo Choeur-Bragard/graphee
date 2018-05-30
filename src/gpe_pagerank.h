@@ -15,15 +15,9 @@ namespace graphee {
 template <typename gpe_dmat_t, typename gpe_dvec_t>
 class gpePageRank {
 public:
-  gpePageRank (gpe_props props) : props(props) {}
-
-  gpePageRank (gpe_props props, std::vector<std::string> filenames) :
-    props(props) {
-    adj_mat.load_edgelist (filenames, gpe_utils::GZ, gpe_utils::UO | gpe_utils::TRANS);
-  }
-
-  gpePageRank (gpe_props props, gpe_dmat_t& adjency_matrix) :
-    props(props), adj_mat(adjency_matrix) {};
+  gpePageRank (gpe_props props);
+  gpePageRank (gpe_props props, std::vector<std::string> filenames);
+  gpePageRank (gpe_props props, std::string adj_mat_name);
 
   void calc_page_rank (uint64_t niter);
 
@@ -40,6 +34,38 @@ private:
 }; // class gpePageRank
 
 template <typename gpe_dmat_t, typename gpe_dvec_t>
+gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank (gpe_props arg_props) {
+  props = arg_props;
+
+  adj_mat.init_diskmat (props, "adj");
+  pagerank.init_diskvec (props, "pr");
+  pagerank_itp1.init_diskvec (props, "prp1");
+  out_bounds.init_diskvec (props, "ob");
+}
+
+template <typename gpe_dmat_t, typename gpe_dvec_t>
+gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank (gpe_props arg_props, std::vector<std::string> filenames) {
+  props = arg_props;
+
+  adj_mat.init_diskmat (props, "adj");
+  pagerank.init_diskvec (props, "pr");
+  pagerank_itp1.init_diskvec (props, "prp1");
+  out_bounds.init_diskvec (props, "ob");
+
+  adj_mat.load_edgelist (filenames, gpe_utils::GZ, gpe_utils::UO | gpe_utils::TRANS);
+}
+
+template <typename gpe_dmat_t, typename gpe_dvec_t>
+gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank (gpe_props arg_props, std::string adj_mat_name) {
+  props = arg_props;
+
+  adj_mat.init_diskmat (props, adj_mat_name);
+  pagerank.init_diskvec (props, "pr");
+  pagerank_itp1.init_diskvec (props, "prp1");
+  out_bounds.init_diskvec (props, "ob");
+}
+
+template <typename gpe_dmat_t, typename gpe_dvec_t>
 void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank (uint64_t niter) {
   if (adj_mat.empty()) {
     gpe_error ("Cannot compute PageRank, the \'adjency_matrix\' is empty");
@@ -48,13 +74,13 @@ void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank (uint64_t niter) {
 
   // We use it as a first guess 
   pagerank.set_init_value (1.);
-  out_bounds.mat_vec_prod (adj_mat, pagerank);
+  out_bounds.alpha_mat_vec_prod (1., adj_mat, pagerank);
 
   // Necesseray for the rest of the calculation
   pagerank.set_init_value (1./((float) props.nslices));
 
   for (uint64_t loop_id = 0; loop_id < niter; loop_id++) {
-    pagerank_itp1.init_val (0.);
+    pagerank_itp1.set_init_value (0.);
     pagerank_itp1.alpha_mat_vec_prod (damp, adj_mat, pagerank);
 
     pagerank_itp1 += (1.-damp)/((float) props.nvertices);

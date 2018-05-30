@@ -13,9 +13,10 @@ int main (int argc, char** argv) {
 
   gpe_diskmat<gpe_bsmat_csr<uint32_t>> adj (props, "adj");
 
-  gpePageRank<gpe_diskmat<gpe_bsmat_csr<uint32_t>>, gpe_diskvec<gpe_vec<float>>> gPR (props, adj);
+  gpePageRank<gpe_diskmat<gpe_bsmat_csr<uint32_t>>, gpe_diskvec<gpe_vec<float>>> gPR (props, "adj");
 
   gPR.calc_page_rank (10);
 
   return 0;
+}
 

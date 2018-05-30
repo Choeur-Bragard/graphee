@@ -1,7 +1,11 @@
 # To-Do list
-- [x] :warning: Add a `swap` function to `gpe_diskvec`
+- [ ] :warning: Rename and simplify arch for the 1st release
+- [ ] :zap: Write a complete pagerank example
+- [ ] :zap: Write a complete `README`
+- [ ] Make a `edgelist_converter` independent of the file size
+- [x] Add a `swap` function to `gpe_diskvec`
 - [x] Write the `mat_vec_prod` for `(disk)mat/vec`
-- [ ] :zap: Include both PageRank and CUDA PageRank 
+- [x] Include both PageRank and ~~CUDA PageRank~~
 - [x] Verify the implementation of `gpe_diskmat`
 - [x] Implement DCSR sparse matrix format
 - [ ] :zap: Add to DCSR format `insert` and `remove` members

@@ -25,20 +25,26 @@ namespace graphee {
 template <typename gpe_vec_t>
 class gpe_diskvec {
 public:
+  gpe_diskvec ();
   gpe_diskvec (gpe_props props, std::string vec_name); 
   gpe_diskvec (gpe_props props, std::string vec_name, size_t n, 
     typename gpe_vec_t::value_type init_val = 0);
 
   ~gpe_diskvec () {}
 
+  void init_diskvec (gpe_props props, std::string vec_name);
+
   void get_vector_slice (uint64_t sliceID, gpe_vec_t& vec);
 
   void swap (gpe_diskvec<gpe_vec_t>& vec);
 
   template <typename gpe_dmat_t, typename gpe_dvec_t>
-  void mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec);
+  void alpha_mat_vec_prod (float alpha, gpe_dmat_t& dmat, gpe_dvec_t& dvec);
 
   typedef gpe_vec_t vector_type;
+
+  void operator+= (typename gpe_vec_t::value_type val);
+  void set_init_value (typename gpe_vec_t::value_type init_value);
 
 private:
   gpe_props props;
@@ -49,9 +55,11 @@ private:
   std::ostringstream err;
 
   std::string get_slice_filename (uint64_t sliceID);
-
-  void set_init_value (typename gpe_vec_t::value_type init_value);
 }; // class gpe_diskvec
+
+template <typename gpe_vec_t>
+gpe_diskvec<gpe_vec_t>::gpe_diskvec () {
+}
 
 template <typename gpe_vec_t>
 gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name) {
@@ -79,6 +87,17 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
   for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
     gpe_vec_t vec (props, props.window, init_val);
     vec.save (get_slice_filename(sliceID));
+  }
+}
+
+template <typename gpe_vec_t>
+void gpe_diskvec<gpe_vec_t>::init_diskvec (gpe_props arg_props, std::string arg_vec_name) {
+  props = arg_props;
+  vec_name = arg_vec_name;
+
+  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
+    gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
+    exit (-1);
   }
 }
 
@@ -144,7 +163,7 @@ void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
 
 template <typename gpe_vec_t>
 template <typename gpe_dmat_t, typename gpe_dvec_t>
-void gpe_diskvec<gpe_vec_t>::mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
+void gpe_diskvec<gpe_vec_t>::alpha_mat_vec_prod (float alpha, gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
   gpe_vec_t res (props);
   typename gpe_dvec_t::vector_type vec_arg (props);
   typename gpe_dmat_t::matrix_type mat_arg (props);
@@ -155,9 +174,19 @@ void gpe_diskvec<gpe_vec_t>::mat_vec_prod (gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
       dvec.get_vector_slice (col, vec_arg);
       dmat.get_matrix_block (line, col, mat_arg);
 
-      res.mat_vec_prod(mat_arg, vec_arg);
+      res.alpha_mat_vec_prod(alpha, mat_arg, vec_arg);
     }
     res.save (get_slice_filename(line));
+  }
+}
+
+template <typename gpe_vec_t>
+void gpe_diskvec<gpe_vec_t>::operator+= (typename gpe_vec_t::value_type val) {
+  gpe_vec_t vec (props);
+  for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++) {
+    vec.load (get_slice_filename(slice_id));
+    vec += val;
+    vec.save (get_slice_filename(slice_id));
   }
 }
 

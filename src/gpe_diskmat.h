@@ -29,9 +29,12 @@ namespace graphee {
 template <typename gpe_mat_t>
 class gpe_diskmat {
 public:
+  gpe_diskmat ();
   gpe_diskmat (gpe_props props, std::string matrix_name);
 
   ~gpe_diskmat ();
+
+  void init_diskmat (gpe_props props, std::string matrix_name);
 
   void load_edgelist (const std::vector<std::string>& filenames, int ftype, int options);
 
@@ -43,6 +46,8 @@ public:
   static const int UO     = 0x00000100; 
 
   typedef gpe_mat_t matrix_type;
+
+  bool empty ();
 
 private:
   std::ostringstream log;
@@ -74,6 +79,10 @@ private:
 };
 
 template <typename gpe_mat_t>
+gpe_diskmat<gpe_mat_t>::gpe_diskmat () {
+}
+
+template <typename gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::gpe_diskmat (gpe_props arg_props, std::string arg_matrix_name) {
   props = arg_props;
   matrix_name = arg_matrix_name;
@@ -86,6 +95,12 @@ gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   delete [] tmpfp;
 }
 
+template <typename gpe_mat_t>
+void gpe_diskmat<gpe_mat_t>::init_diskmat (gpe_props arg_props, std::string arg_matrix_name) {
+  props = arg_props;
+  matrix_name = arg_matrix_name;
+  tmpfp = new std::fstream [props.nblocks];
+}
 
 template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
@@ -104,6 +119,11 @@ void gpe_diskmat<gpe_mat_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_
   log.str("");
   log << "Loaded disk block [" << line << ":" << col << "]";
   gpe_log (log.str());
+}
+
+template <typename gpe_mat_t>
+bool gpe_diskmat<gpe_mat_t>::empty () {
+  return (props.nvertices == 0);
 }
 
 /*! Reads the raw edgelist files
