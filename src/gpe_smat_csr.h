@@ -9,7 +9,7 @@
 
 namespace graphee {
 
-template <class V>
+template <typename idx_t, typename val_t>
 class gpe_smat_csr {
 };
 

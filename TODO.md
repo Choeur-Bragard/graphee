@@ -1,5 +1,5 @@
 # To-Do list
-- [ ] :warning: Add a `swap` function to `gpe_diskvec`
+- [x] :warning: Add a `swap` function to `gpe_diskvec`
 - [ ] :zap: Include both PageRank and CUDA PageRank 
 - [x] Verify the implementation of `gpe_diskmat`
 - [x] Implement DCSR sparse matrix format

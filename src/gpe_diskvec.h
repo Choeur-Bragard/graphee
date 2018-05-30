@@ -24,7 +24,7 @@
 
 namespace graphee {
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 class gpe_diskvec {
 public:
   gpe_diskvec (gpe_props props, std::string vec_name); 
@@ -37,6 +37,8 @@ public:
 
   void swap (gpe_diskvec<gpe_vec_t>& vec);
 
+  using vector_type = gpe_vec_t;
+
 private:
   gpe_props props;
   std::string vec_name;
@@ -48,7 +50,7 @@ private:
   std::string get_slice_filename (uint64_t sliceID);
 }; // class gpe_diskvec
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name) {
   props = arg_props;
   vec_name = arg_vec_name;
@@ -59,7 +61,7 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
   }
 }
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name, size_t n, 
   typename gpe_vec_t::value_type init_val) {
   props = arg_props;
@@ -76,7 +78,7 @@ gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_na
   }
 }
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 void gpe_diskvec<gpe_vec_t>::get_vector_slice (uint64_t sliceID, gpe_vec_t& vec) {
   log.str("");
   log << "Start to load vector slice [" << sliceID << "]";
@@ -89,14 +91,14 @@ void gpe_diskvec<gpe_vec_t>::get_vector_slice (uint64_t sliceID, gpe_vec_t& vec)
   gpe_log (log.str());
 }
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 std::string gpe_diskvec<gpe_vec_t>::get_slice_filename (uint64_t sliceID) {
   std::ostringstream slicename;
   slicename << props.name << "_" << vec_name << "_dvecslc_" << sliceID << ".gpe";
   return slicename.str();
 }
 
-template <class gpe_vec_t>
+template <typename gpe_vec_t>
 void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
   if (props.nvertices != vec.props.nvertices) {
     err.str("");

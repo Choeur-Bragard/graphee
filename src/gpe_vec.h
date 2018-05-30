@@ -12,7 +12,7 @@
 
 namespace graphee {
 
-template <class val_t>
+template <typename val_t>
 class gpe_vec : public std::vector<val_t> {
 public:
   enum {BIN, SNAPPY};
@@ -28,7 +28,8 @@ public:
   void save (std::string name, int fileformat = BIN, uint64_t offl = 0);
   void load (std::string name);
 
-  const typedef val_t value_type;
+  using value_type = val_t;
+
   const std::string vector_type {"GPE_VEC"};
 
 private:

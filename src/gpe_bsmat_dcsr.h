@@ -24,7 +24,7 @@ namespace graphee {
  *  non-wighted-edge graphs.
  */
 
-template <class idx_t>
+template <typename idx_t>
 class gpe_bsmat_dcsr {
 public:
   enum {BIN, SNAPPY};
@@ -68,7 +68,7 @@ private:
   uint64_t offc;
 }; // gpe_bsmat_dcsr
 
-template <class idx_t>
+template <typename idx_t>
 gpe_bsmat_dcsr<idx_t>::gpe_bsmat_dcsr (gpe_props& i_prop) {
   if (i_prop.window > std::numeric_limits<idx_t>::max()) {
     gpe_error ("\'idx_t\' has a lower limit than the \'window\' value");
@@ -77,7 +77,7 @@ gpe_bsmat_dcsr<idx_t>::gpe_bsmat_dcsr (gpe_props& i_prop) {
   prop = i_prop;
 }
 
-template <class idx_t>
+template <typename idx_t>
 gpe_bsmat_dcsr<idx_t>::gpe_bsmat_dcsr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz, size_t i_pitch, size_t i_alpha) {
   if (i_prop.window > std::numeric_limits<idx_t>::max()) {
     gpe_error ("\'idx_t\' has a lower limit than the \'window\' value");
@@ -94,7 +94,7 @@ gpe_bsmat_dcsr<idx_t>::gpe_bsmat_dcsr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz
   ja.resize (nnz+alpha, 0);
 }
 
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::sorted_fill (idx_t i, idx_t j) {
   for (idx_t l = last_id; l <= i; l++) {
     ia[2*(l+1)*pitch]   = ia[2*l*pitch+1];
@@ -108,23 +108,23 @@ void gpe_bsmat_dcsr<idx_t>::sorted_fill (idx_t i, idx_t j) {
   last_id = i;
 }
 
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::set_offsets (uint64_t i_offl, uint64_t i_offc) {
   offl = i_offl;
   offc = i_offc;
 }
 
 /*! Inserting element in a CSR matrix */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::insert (idx_t i, idx_t j) {
 }
 
 /*! Remove element of the CSR matrix*/
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::remove (idx_t i, idx_t j) {
 }
 
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::defrag () {
 }
 
@@ -133,7 +133,7 @@ void gpe_bsmat_dcsr<idx_t>::defrag () {
  * One can determine the fileformat avail BIN or
  * SNAPPY for fast-light compression.
  */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::save (std::string name, int fileformat, uint64_t offl, uint64_t offc) {
   std::ofstream matfp (name, std::ios_base::binary);
 
@@ -186,7 +186,7 @@ void gpe_bsmat_dcsr<idx_t>::save (std::string name, int fileformat, uint64_t off
  *
  * It determines the fileformat from the file itself
  */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_dcsr<idx_t>::load (std::string name) {
   std::ifstream matfp (name, std::ios_base::binary);
 
@@ -270,12 +270,12 @@ void gpe_bsmat_dcsr<idx_t>::load (std::string name) {
   matfp.close();
 }
 
-template <class idx_t>
+template <typename idx_t>
 size_t gpe_bsmat_dcsr<idx_t>::size () {
   return (2*m*pitch)*sizeof(uint64_t)+(nnz+alpha)*sizeof(idx_t);
 }
 
-template <class idx_t>
+template <typename idx_t>
 bool gpe_bsmat_dcsr<idx_t>::verify () {
   return (nnz == ia[2*m*pitch]);
 }

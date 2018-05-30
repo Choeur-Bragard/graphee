@@ -28,7 +28,7 @@
 
 namespace graphee {
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 class gpe_diskmat {
 public:
   gpe_diskmat (gpe_props props, std::string matrix_name);
@@ -43,6 +43,8 @@ public:
   static const int DIRECT = 0x00000001; 
   static const int TRANS  = 0x00000010; 
   static const int UO     = 0x00000100; 
+
+  using matrix_type = gpe_mat_t;
 
 private:
   std::ostringstream log;
@@ -73,27 +75,27 @@ private:
   void close_tmp_blocks ();
 };
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::gpe_diskmat (gpe_props arg_props, std::string arg_matrix_name) {
   props = arg_props;
   matrix_name = arg_matrix_name;
   tmpfp = new std::fstream [props.nblocks];
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 gpe_diskmat<gpe_mat_t>::~gpe_diskmat () {
   close_tmp_blocks ();
   delete [] tmpfp;
 }
 
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
   //read_and_split_list (filenames, ftype);
   diskblock_manager ();
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_mat_t& mat) {
   log.str("");
   log << "Start to load disk block [" << line << ":" << col << "]";
@@ -112,7 +114,7 @@ void gpe_diskmat<gpe_mat_t>::get_matrix_block (uint64_t line, uint64_t col, gpe_
  *  It splits the edgelist into blocks in order to make
  *  the D/CSR building faster
  */
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>& filenames, int ftype) {
   uint64_t** edlI = new uint64_t* [props.nblocks];
   uint64_t** edlO = new uint64_t* [props.nblocks];
@@ -251,7 +253,7 @@ void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>
   close_tmp_blocks ();
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::load_GZ (const std::string filename, std::stringstream* ss, std::mutex* read_mtx) {
   std::ostringstream log;
   std::ostringstream err;
@@ -278,7 +280,7 @@ void gpe_diskmat<gpe_mat_t>::load_GZ (const std::string filename, std::stringstr
   }
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::sort_and_save_list (uint64_t* block, uint64_t nelems,
     std::fstream* ofp, std::mutex* mtx) {
 
@@ -302,7 +304,7 @@ void gpe_diskmat<gpe_mat_t>::sort_and_save_list (uint64_t* block, uint64_t nelem
   delete[] edgeptrs;
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::diskblock_manager () {
   std::vector<std::thread> diskblock_threads;
 
@@ -330,7 +332,7 @@ void gpe_diskmat<gpe_mat_t>::diskblock_manager () {
   close_tmp_blocks ();
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, uint64_t line, uint64_t col,
       std::fstream* tmpfp, size_t* alloc_mem, std::mutex* mtx, std::condition_variable* cond) {
   std::ostringstream log;
@@ -456,14 +458,14 @@ void gpe_diskmat<gpe_mat_t>::diskblock_builder (gpe_diskmat<gpe_mat_t>* dmat, ui
   cond->notify_one();
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 std::string gpe_diskmat<gpe_mat_t>::get_block_filename (uint64_t line, uint64_t col) {
   std::ostringstream matrixname;
   matrixname << props.name << "_" << matrix_name << "_dmatblk_" << line << "_" << col << ".gpe";
   return matrixname.str();
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
   std::ostringstream blockname;
 
@@ -484,7 +486,7 @@ void gpe_diskmat<gpe_mat_t>::open_tmp_blocks (std::ios_base::openmode mode) {
   }
 }
 
-template <class gpe_mat_t>
+template <typename gpe_mat_t>
 void gpe_diskmat<gpe_mat_t>::close_tmp_blocks () {
   for (uint64_t bid = 0; bid < props.nblocks; bid++) {
     if (tmpfp[bid].is_open()) {

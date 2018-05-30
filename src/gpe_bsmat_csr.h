@@ -23,7 +23,7 @@ namespace graphee {
  * graphs.
  */
 
-template <class idx_t>
+template <typename idx_t>
 class gpe_bsmat_csr{
 public:
   enum {BIN, SNAPPY};
@@ -46,8 +46,8 @@ public:
   bool verify ();
   idx_t last_id {0};
 
-  const typedef idx_t index_type;
-  const typedef bool value_type;
+  using index_type = idx_t;
+  using value_type = bool;
 
   const std::string matrix_type {"GPE_BSMAT_CSR"};
 
@@ -71,7 +71,7 @@ private:
 }; // class gpe_bsmat_csr
 
 /*! Clean constructor */
-template <class idx_t>
+template <typename idx_t>
 gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop) {
   prop = i_prop;
   m = 0;
@@ -79,7 +79,7 @@ gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop) {
 }
 
 /*! Constructor for predefined matrix size */
-template <class idx_t>
+template <typename idx_t>
 gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz) {
   prop = i_prop;
   m = i_m;
@@ -96,12 +96,12 @@ gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props& i_prop, idx_t i_m, idx_t i_nnz) 
 }
 
 /*! General destructor of the class */
-template <class idx_t>
+template <typename idx_t>
 gpe_bsmat_csr<idx_t>::~gpe_bsmat_csr () {
 }
 
 /*! Standard fill of the matrix */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::sorted_fill (idx_t i, idx_t j) {
   for (idx_t l = last_id+1; l <= i; l++) {
     ia[l+1] = ia[l];
@@ -113,19 +113,19 @@ void gpe_bsmat_csr<idx_t>::sorted_fill (idx_t i, idx_t j) {
   last_id = i;
 }
 
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::set_offsets (uint64_t i_offl, uint64_t i_offc) {
   offl = i_offl;
   offc = i_offc;
 }
 
 /*! Inserting element in a CSR matrix */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::insert (idx_t i, idx_t j) {
 }
 
 /*! Remove element of the CSR matrix*/
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::remove (idx_t i, idx_t j) {
 }
 
@@ -134,7 +134,7 @@ void gpe_bsmat_csr<idx_t>::remove (idx_t i, idx_t j) {
  * One can determine the fileformat avail BIN or
  * SNAPPY for fast-light compression.
  */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl, uint64_t) {
   std::ofstream matfp (name, std::ios_base::binary);
 
@@ -184,7 +184,7 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
  *
  * It determines the fileformat from the file itself
  */
-template <class idx_t>
+template <typename idx_t>
 void gpe_bsmat_csr<idx_t>::load (std::string name) {
   std::ifstream matfp (name, std::ios_base::binary);
 
@@ -270,12 +270,12 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   matfp.close();
 }
 
-template <class idx_t>
+template <typename idx_t>
 size_t gpe_bsmat_csr<idx_t>::size () {
   return (m+1)*sizeof(uint64_t) + nnz*sizeof(idx_t);
 }
 
-template <class idx_t>
+template <typename idx_t>
 bool gpe_bsmat_csr<idx_t>::verify () {
   if (last_id < m) {
     for (idx_t l = last_id+1; l <= m; l++) {
