@@ -1,5 +1,5 @@
-#ifndef GPE_BSMAT_CSR_H
-#define GPE_BSMAT_CSR_H
+#ifndef SPARSE_MATRIX_CSR_H
+#define SPARSE_MATRIX_CSR_H
 
 #include <iostream>
 #include <fstream>
@@ -14,85 +14,69 @@
 
 namespace graphee {
 
-/*! \brief Boolean sparse matrix in CSR
+/*! \brief Sparse matrix in CSR format
  *         Commonly named Compressed Sparse Row
  *
- * It defines a sparse matrix filled only with elements,
- * of values \{0,1\}. This is the case of a non-weighted-edge
- * graphs.
+ * The matrix can handle either `double`, `float` and `int` 
+ * values.
+ * A special case is when these matrices save 
+ * `bool` values. In such cases no vector `a` is allocated.
  */
 
-template <typename idx_t>
-class gpe_bsmat_csr{
+template <typename valueT>
+class sparseMatrixCSR {
 public:
-  enum {BIN, SNAPPY};
+  typedef valueT valueType;
 
-  gpe_bsmat_csr (gpe_props i_prop);
-  gpe_bsmat_csr (gpe_props i_prop, idx_t i_m, idx_t i_nnz);
-  ~gpe_bsmat_csr ();
+  sparseMatrixCSR ();
+  sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t nonzero_elems);
+  ~sparseMatrixCSR ();
 
-  void sorted_fill (idx_t i, idx_t j);
+  void fill   (uint64_t i, uint64_t j, valueT val);
+  void insert (uint64_t i, uint64_t j, valueT val);
+  void remove (uint64_t i, uint64_t j, valueT val);
 
-  void set_offsets (uint64_t offl, uint64_t offc);
-
-  void insert (idx_t i, idx_t j);
-  void remove (idx_t i, idx_t j);
-
-  void save (std::string name, int fileformat = BIN, uint64_t offl = 0, uint64_t offc = 0);
-  void load (std::string name);
-
-  size_t size ();
-  bool verify ();
-  idx_t last_id {0};
-
-  typedef idx_t index_type;
-  typedef bool value_type;
-
-  const std::string matrix_type {"GPE_BSMAT_CSR"};
+  size_t size () const;
+  bool verify () const;
 
   void clear ();
 
-  template <typename val_t>
-  friend class gpe_vec;
+  const std::string matrixType {"sparseMatrixCSR"};
 
 private:
-  std::ostringstream log;
-  std::ostringstream wrn;
-  std::ostringstream err;
-
-  gpe_props prop;
-
-  bool is_alloc {false};
-
-  idx_t m;
-  uint64_t nnz;
-
-  uint64_t offl;
-  uint64_t offc;
-
+  std::vector<valueT> a;
   std::vector<uint64_t> ia;
-  std::vector<idx_t> ja;
-}; // class gpe_bsmat_csr
+  std::vector<uint64_t> ja;
 
-/*! Clean constructor */
-template <typename idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props i_prop) {
-  prop = i_prop;
-  m = 0;
-  nnz = 0;
+  properties&& props;
+
+  bool is_bool_sparse_matrix;
+
+  uint64_t m;
+  uint64_t nnz;
+  uint64_t fill_id;
+}; // class sparseMatrixCSR
+
+/*! Empty constructor */
+template <typename valueT>
+sparseMatrixCSR<valueT>::sparseMatrixCSR () {
+  bool_matrix {std::typeid(valueT) != std::typeid(bool)};
+  m {0};
+  nnz {0};
+  fill_id {0};
 }
 
-/*! Constructor for predefined matrix size */
-template <typename idx_t>
-gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props i_prop, idx_t i_m, idx_t i_nnz) {
-  prop = i_prop;
-  m = i_m;
-  nnz = i_nnz;
+/*! General constructor of class */
+template <typename valueT>
+sparseMatrixCSR<valueT>::sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t nonzero_elems);
+  props {properties};
+  m {nlines};
+  nnz {nonzero_elems};
 
-  if ((m+1)*sizeof(uint64_t)+nnz*sizeof(idx_t) < prop.ram_limit) {
-    ia.resize(m+1, 0);
-    ja.resize(nnz, 0);
-    is_alloc = true;
+  if ((nzz+m+1)*sizeof(uint64_t) < props.ram_limit) {
+    if (!bool_matrix) a.resize (nnz, 0.);
+    ia.resize (m+1, 0);
+    ja.resize (nnz, 0);
   } else {
     gpe_error("Requested size is beyond \'ram_limit\'");
     exit (-1);
@@ -100,46 +84,43 @@ gpe_bsmat_csr<idx_t>::gpe_bsmat_csr (gpe_props i_prop, idx_t i_m, idx_t i_nnz) {
 }
 
 /*! General destructor of the class */
-template <typename idx_t>
-gpe_bsmat_csr<idx_t>::~gpe_bsmat_csr () {
+template <typename valueT>
+sparseMatrixCSR<valueT>::~sparseMatrixCSR () {
+  delete a;
+  delete ia;
+  delete ja;
 }
 
-/*! Standard fill of the matrix */
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::sorted_fill (idx_t i, idx_t j) {
-  for (idx_t l = last_id+1; l <= i; l++) {
+/*! Filling the sparse matrix with sorted entries by
+ * ascending lines id
+ */
+template <typename valueT>
+void sparseMatrixCSR<valueT>::fill (uint64_t i, uint64_t j, valueT val) {
+  for (uint64_t l = last_id+1; l <= i; l++) {
     ia[l+1] = ia[l];
   }
 
+  if (!bool_matrix) a[ia[i+1]] = val;
   ja[ia[i+1]] = j;
+
   ia[i+1]++;
 
-  last_id = i;
-}
-
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::set_offsets (uint64_t i_offl, uint64_t i_offc) {
-  offl = i_offl;
-  offc = i_offc;
+  fill_id = i;
 }
 
 /*! Inserting element in a CSR matrix */
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::insert (idx_t i, idx_t j) {
+template <typename valueT>
+void sparseMatrixCSR<valueT>::insert (uint64_t i, uint64_t j, valueT val) {
 }
 
 /*! Remove element of the CSR matrix*/
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::remove (idx_t i, idx_t j) {
+template <typename valueT>
+void sparseMatrixCSR<valueT>::remove (uint64_t i, uint64_t j, valueT val) {
 }
 
-/*! Save the matrix to a file
- *
- * One can determine the fileformat avail BIN or
- * SNAPPY for fast-light compression.
- */
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl, uint64_t) {
+/*! To be pushed within 'diskSparseMatrix' */
+template <typename valueT>
+void sparseMatrixCSR<valueT>::save (std::string name, int fileformat, uint64_t offl, uint64_t) {
   std::ofstream matfp (name, std::ios_base::binary);
 
   size_t matrix_type_size = matrix_type.size();
@@ -156,12 +137,12 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
   matfp.write (reinterpret_cast<const char*>(&offc), sizeof(uint64_t));
 
   /* Matrix dimension */
-  matfp.write (reinterpret_cast<const char*>(&m), sizeof(idx_t));
+  matfp.write (reinterpret_cast<const char*>(&m), sizeof(uint64_t));
   matfp.write (reinterpret_cast<const char*>(&nnz), sizeof(uint64_t));
 
   if (fileformat == BIN) {
     matfp.write (reinterpret_cast<const char*>(ia.data()), ia.size()*sizeof(uint64_t));
-    matfp.write (reinterpret_cast<const char*>(ja.data()), ja.size()*sizeof(idx_t));
+    matfp.write (reinterpret_cast<const char*>(ja.data()), ja.size()*sizeof(uint64_t));
 
   } else if (fileformat == SNAPPY) {
     size_t ia_snappy_size = max_compress_size (ia.size()*sizeof(uint64_t));
@@ -172,9 +153,9 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
     matfp.write (reinterpret_cast<const char*>(ia_snappy), ia_snappy_size);
     delete[] ia_snappy;
 
-    size_t ja_snappy_size = max_compress_size (ja.size()*sizeof(idx_t));
+    size_t ja_snappy_size = max_compress_size (ja.size()*sizeof(uint64_t));
     char* ja_snappy = new char [ja_snappy_size];
-    compress_snappy (reinterpret_cast<char*>(ja.data()), (nnz)*sizeof(idx_t), ja_snappy, ja_snappy_size);
+    compress_snappy (reinterpret_cast<char*>(ja.data()), (nnz)*sizeof(uint64_t), ja_snappy, ja_snappy_size);
 
     matfp.write (reinterpret_cast<const char*>(&ja_snappy_size), sizeof(size_t));
     matfp.write (reinterpret_cast<const char*>(ja_snappy), ja_snappy_size);
@@ -184,12 +165,9 @@ void gpe_bsmat_csr<idx_t>::save (std::string name, int fileformat, uint64_t offl
   matfp.close();
 }
 
-/*! Read matrix from a file
- *
- * It determines the fileformat from the file itself
- */
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::load (std::string name) {
+/*! To be pushed within 'diskSparseMatrix' */
+template <typename valueT>
+void sparseMatrixCSR<valueT>::load (std::string name) {
   this->clear ();
   std::ifstream matfp (name, std::ios_base::binary);
 
@@ -218,10 +196,10 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   matfp.read (reinterpret_cast<char*>(&offc), sizeof(uint64_t));
 
   /* Matrix dimension */
-  matfp.read (reinterpret_cast<char*>(&m), sizeof(idx_t));
+  matfp.read (reinterpret_cast<char*>(&m), sizeof(uint64_t));
   matfp.read (reinterpret_cast<char*>(&nnz), sizeof(uint64_t));
 
-  if ((m+1)*sizeof(uint64_t) + nnz*sizeof(idx_t) < prop.ram_limit) {
+  if ((m+1)*sizeof(uint64_t) + nnz*sizeof(uint64_t) < prop.ram_limit) {
     ia.resize (m+1, 0);
     ja.resize (nnz, 0);
     is_alloc = true;
@@ -233,7 +211,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
 
   if (fileformat == BIN) {
     matfp.read (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t));
-    matfp.read (reinterpret_cast<char*>(ja.data()), ja.size()*sizeof(idx_t));
+    matfp.read (reinterpret_cast<char*>(ja.data()), ja.size()*sizeof(uint64_t));
 
   } else if (fileformat == SNAPPY) {
     bool uncomp_succeed;
@@ -260,7 +238,7 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
     char* ja_snappy = new char [ja_snappy_size];
     matfp.read (reinterpret_cast<char*>(ja_snappy), ja_snappy_size);
 
-    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, reinterpret_cast<char*>(ja.data()), nnz*sizeof(idx_t));
+    uncomp_succeed = uncompress_snappy (ja_snappy, ja_snappy_size, reinterpret_cast<char*>(ja.data()), nnz*sizeof(uint64_t));
     delete[] ja_snappy;
 
     if (!uncomp_succeed) {
@@ -276,18 +254,18 @@ void gpe_bsmat_csr<idx_t>::load (std::string name) {
   matfp.close();
 }
 
-template <typename idx_t>
-size_t gpe_bsmat_csr<idx_t>::size () {
-  return (m+1)*sizeof(uint64_t) + nnz*sizeof(idx_t);
+template <typename valueT>
+size_t sparseMatrixCSR<valueT>::size () {
+  return (nnz+m+1)*sizeof(uint64_t);
 }
 
-template <typename idx_t>
-bool gpe_bsmat_csr<idx_t>::verify () {
-  if (last_id < m) {
-    for (idx_t l = last_id+1; l <= m; l++) {
+template <typename valueT>
+bool sparseMatrixCSR<valueT>::verify () {
+  if (fill_id < m) {
+    for (uint64_t l = fill_id+1; l <= m; l++) {
       ia[l+1] = ia[l];
     }
-    last_id = m;
+    fill_id = m;
   }
 
   if (nnz == ia[m]) {
@@ -300,19 +278,16 @@ bool gpe_bsmat_csr<idx_t>::verify () {
   }
 }
 
-template <typename idx_t>
-void gpe_bsmat_csr<idx_t>::clear() {
+template <typename valueT>
+void sparseMatrixCSR<valueT>::clear() {
+  if (!bool_matrix) a.clear();
   ia.clear();
   ja.clear();
 
   m = 0;
   nnz = 0;
-  offl = 0;
-  offc = 0;
-
-  is_alloc = false;
 }
 
 } // namespace graphee
 
-#endif // GPE_BSMAT_CSR_H
+#endif // sparseMatrixCSR_H
