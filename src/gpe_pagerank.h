@@ -22,6 +22,10 @@ public:
   void calc_page_rank (uint64_t niter);
 
 private:
+  std::ostringstream log;
+  std::ostringstream wrn;
+  std::ostringstream err;
+
   gpe_props props;
 
   gpe_dmat_t adj_mat;
@@ -74,12 +78,17 @@ void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank (uint64_t niter) {
 
   // We use it as a first guess 
   pagerank.set_init_value (1.);
+  out_bounds.set_init_value (0.);
   out_bounds.alpha_mat_vec_prod (1., adj_mat, pagerank);
 
   // Necesseray for the rest of the calculation
   pagerank.set_init_value (1./((float) props.nslices));
 
   for (uint64_t loop_id = 0; loop_id < niter; loop_id++) {
+    log.str("");
+    log << "Start PageRank loop #" << loop_id;
+    gpe_step (log.str());
+
     pagerank_itp1.set_init_value (0.);
     pagerank_itp1.alpha_mat_vec_prod (damp, adj_mat, pagerank);
 

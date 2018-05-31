@@ -192,6 +192,9 @@ void gpe_diskvec<gpe_vec_t>::operator+= (typename gpe_vec_t::value_type val) {
 
 template <typename gpe_vec_t>
 void gpe_diskvec<gpe_vec_t>::set_init_value (typename gpe_vec_t::value_type init_val) {
+  log.str("");
+  log << "Init value of vector \'" << vec_name << "\'";
+  gpe_log (log.str());
   for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
     gpe_vec_t vec (props, props.window, init_val);
     vec.save (get_slice_filename(sliceID));

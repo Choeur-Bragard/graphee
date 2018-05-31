@@ -1,5 +1,6 @@
 CC = g++
 OPT = -std=c++11 -O3 -pthread
+#OPT = -std=c++11 -g -pthread
 INC = -I src/.
 LIB = -lgzstream -lsnappy -lz -lm
 
