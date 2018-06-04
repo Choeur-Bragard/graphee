@@ -1,5 +1,5 @@
-#ifndef GPE_PROPS_H
-#define GPE_PROPS_H
+#ifndef GPE_PROPS_H__
+#define GPE_PROPS_H__
 
 #include <iostream>
 #include <string>
@@ -18,7 +18,7 @@ public:
     ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices*nslices), 
     window(nvertices/nslices) {}
 
-  ~gpe_props () {}
+  ~properties () {}
 
   const size_t B  {1};
   const size_t KB {1UL << 10};
@@ -37,4 +37,4 @@ public:
 
 } // namespace graphee
 
-#endif // SETINGS_H
+#endif // GPE_PROPS_H__

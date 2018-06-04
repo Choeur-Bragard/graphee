@@ -26,8 +26,6 @@ namespace graphee {
 template <typename valueT>
 class sparseMatrixCSR {
 public:
-  typedef valueT valueType;
-
   sparseMatrixCSR ();
   sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t ncols,
       uint64_t nonzero_elems, valueT init_val = 0.);
@@ -47,15 +45,16 @@ public:
 
   void clear ();
 
-  std::string& get_matrix_properties ();
-
   template <typename vecValueT>
   vector<vecValueT>& operator* (vector<vecValueT>& rvec);
   sparseMatrixCSR<valueT>& operator* (valueT rval);
 
   const std::string matrixType {"sparseMatrixCSR"};
 
-  friend vector<valueT>;
+  using valueType = valueT;
+
+  template <typename vecValueT>
+  friend class vector;
 
 private:
   std::vector<valueT> a;
@@ -75,7 +74,7 @@ private:
 /*! Empty constructor */
 template <typename valueT>
 sparseMatrixCSR<valueT>::sparseMatrixCSR () {
-  bool_matrix = typeid(valueT) != typeid(bool);
+  bool_matrix = typeid(valueT) == typeid(bool);
   m = 0;
   n = 0;
   nnz = 0;
@@ -86,7 +85,7 @@ sparseMatrixCSR<valueT>::sparseMatrixCSR () {
 template <typename valueT>
 sparseMatrixCSR<valueT>::sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t ncols, 
     uint64_t nonzero_elems, valueT init_val) {
-  bool_matrix = typeid(valueT) != typeid(bool);
+  bool_matrix = typeid(valueT) == typeid(bool);
   props = properties;
   m = nlines;
   n = ncols;
@@ -141,11 +140,11 @@ template <typename valueT>
 void sparseMatrixCSR<valueT>::save (std::string& name, int fileformat) {
   std::ofstream matfp (name, std::ios_base::binary);
 
-  size_t matrix_type_size = matrixType.size();
+  size_t matrixType_size = matrixType.size();
 
   /* Save explicitly matrix properties */
-  matfp.write (reinterpret_cast<const char*>(&matrix_type_size), sizeof(size_t));
-  matfp.write (reinterpret_cast<const char*>(matrixType.c_str()), matrix_type_size);
+  matfp.write (reinterpret_cast<const char*>(&matrixType_size), sizeof(size_t));
+  matfp.write (reinterpret_cast<const char*>(matrixType.c_str()), matrixType_size);
 
   /* Save fileformat {BIN, SNAPPY} */
   matfp.write (reinterpret_cast<const char*>(&fileformat), sizeof(int));
@@ -185,16 +184,16 @@ void sparseMatrixCSR<valueT>::load (std::string& name) {
   std::ifstream matfp (name, std::ios_base::binary);
 
   /* Save explicitly matrix properties */
-  size_t matrix_type_size;
-  matfp.read (reinterpret_cast<char*>(&matrix_type_size), sizeof(size_t));
+  size_t matrixType_size;
+  matfp.read (reinterpret_cast<char*>(&matrixType_size), sizeof(size_t));
 
-  char read_matrix_type[matrix_type_size+1];
-  matfp.read (reinterpret_cast<char*>(read_matrix_type), matrix_type_size);
-  read_matrix_type[matrix_type_size] = '\0';
+  char read_matrixType[matrixType_size+1];
+  matfp.read (reinterpret_cast<char*>(read_matrixType), matrixType_size);
+  read_matrixType[matrixType_size] = '\0';
 
-  if (std::strcmp (read_matrix_type, matrixType.c_str()) != 0) {
+  if (std::strcmp (read_matrixType, matrixType.c_str()) != 0) {
     std::ostringstream oss;
-    oss << "Wrong matrix format, found \'" << read_matrix_type << "\' while expecting \'"
+    oss << "Wrong matrix format, found \'" << read_matrixType << "\' while expecting \'"
       << matrixType << "\'";
     print_error (oss.str());
     exit (-1);
