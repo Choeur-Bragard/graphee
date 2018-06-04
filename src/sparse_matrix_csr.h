@@ -10,7 +10,9 @@
 
 #include "snappy/snappy.h"
 
-#include "graphee.h"
+#include "utils.h"
+#include "properties.h"
+#include "vector.h"
 
 namespace graphee {
 

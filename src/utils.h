@@ -15,10 +15,10 @@ namespace graphee {
 class utils {
 public:
   enum {PLAIN, GZ, BIN, SNAPPY};
-  const int DIRECT = 0x00000001;
-  const int TRANS  = 0x00000010;
-  const int IB     = 0x00000100;
-  const int OB     = 0x00001000;
+  static const int DIRECT = 0x00000001;
+  static const int TRANS  = 0x00000010;
+  static const int IB     = 0x00000100;
+  static const int OB     = 0x00001000;
 };
 
 void print_log (std::string message);
