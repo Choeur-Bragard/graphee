@@ -6,49 +6,33 @@
 
 namespace graphee {
 
-class gpe_props {
+class properties {
 public:
-  enum {B, KB, MB, GB};
+  properties () : name(""), nvertices(0), nslices(0), nthreads(0), ram_limit(0), sort_limit(0),
+    nblocks(0), window(0) {}
 
-  gpe_props () {}
+  properties (std::string name, uint64_t nvertices, uint64_t nslices, uint64_t nthreads, 
+      size_t ram_limit, size_t sort_limit) :
 
-  gpe_props (std::string in_name, uint64_t in_nvertices, uint64_t in_nslices, uint64_t in_nthreads, 
-      uint64_t in_ram_limit, int unitRL, uint64_t in_sort_limit, int unitSL) :
-
-    name(in_name), nvertices(in_nvertices), nslices(in_nslices),
-    nthreads(in_nthreads), ram_limit(in_ram_limit), sort_limit(in_sort_limit) {
-
-      if (unitRL == KB) {
-        ram_limit *= 1 << 10;
-      } else if (unitRL == MB) {
-        ram_limit *= 1 << 20;
-      } else if (unitRL == GB) {
-        ram_limit *= 1 << 30;
-      }
-
-      if (unitSL == KB) {
-        sort_limit *= 1 << 10;
-      } else if (unitSL == MB) {
-        sort_limit *= 1 << 20;
-      } else if (unitSL == GB) {
-        sort_limit *= 1 << 30;
-      }
-
-      nvertices *= 1000000;
-      window = nvertices/nslices;
-      nblocks = nslices*nslices;
-  }
+    name(name), nvertices(nvertices), nslices(nslices), nthreads(nthreads),
+    ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices*nslices), 
+    window(nvertices/nslices) {}
 
   ~gpe_props () {}
 
-  std::string name;
-  uint64_t nthreads {0};
-  uint64_t nvertices {0};
-  uint64_t ram_limit {0};
-  uint64_t sort_limit {0};
-  uint64_t nslices {0};
-  uint64_t nblocks {0};
-  uint64_t window {0};
+  const size_t B  {1};
+  const size_t KB {1UL << 10};
+  const size_t MB {1UL << 20};
+  const size_t GB {1UL << 30};
+
+  const std::string name;
+  const uint64_t nvertices;
+  const uint64_t nslices;
+  const uint64_t nthreads;
+  const size_t ram_limit;
+  const size_t sort_limit;
+  const uint64_t nblocks;
+  const uint64_t window;
 };
 
 } // namespace graphee

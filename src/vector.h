@@ -1,5 +1,5 @@
-#ifndef GPE_VEC_H
-#define GPE_VEC_H
+#ifndef GRAPHEE_VECTOR_H__
+#define GRAPHEE_VECTOR_H__
 
 #include <iostream>
 #include <fstream>
@@ -12,7 +12,7 @@
 namespace graphee {
 
 template <typename val_t>
-class gpe_vec : public std::vector<val_t> {
+class vector: public std::vector<val_t> {
 public:
   enum {BIN, SNAPPY};
 
@@ -167,4 +167,4 @@ void gpe_vec<val_t>::operator+= (val_t val) {
 
 } // namespace graphee
 
-#endif
+#endif // GRAPHEE_VECTOR_H__

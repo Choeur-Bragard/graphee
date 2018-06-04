@@ -1,5 +1,5 @@
-#ifndef SPARSE_MATRIX_CSR_H
-#define SPARSE_MATRIX_CSR_H
+#ifndef GRAPHEE_SPARSE_MATRIX_CSR_H__
+#define GRAPHEE_SPARSE_MATRIX_CSR_H__
 
 #include <iostream>
 #include <fstream>
@@ -8,7 +8,7 @@
 #include <cstring>
 #include <vector>
 
-#include <snappy.h>
+#include "snappy/snappy.h"
 
 #include "graphee.h"
 
@@ -37,18 +37,21 @@ public:
   void insert (uint64_t i, uint64_t j, valueT val);
   void remove (uint64_t i, uint64_t j, valueT val);
 
+  void save (std::string& filename, int file_format = utils::BIN);
+  void load (std::string& filename);
+
   size_t size () const;
   bool verify () const;
+
+  bool empty () const;
 
   void clear ();
 
   std::string& get_matrix_properties ();
 
   template <typename vecValueT>
-  vector<vecValueT>& operator* (sparseMatrixCSR<valueT>& lmat, vector<vecValueT>& rvec);
-
-  sparseMatrixCSR<valueT>& operator* (valueT lval, sparseMatrixCSR<valueT>& rmat);
-  sparseMatrixCSR<valueT>& operator* (sparseMatrixCSR<valueT>& lmat, valueT rval);
+  vector<vecValueT>& operator* (vector<vecValueT>& rvec);
+  sparseMatrixCSR<valueT>& operator* (valueT rval);
 
   const std::string matrixType {"sparseMatrixCSR"};
 
@@ -72,22 +75,24 @@ private:
 /*! Empty constructor */
 template <typename valueT>
 sparseMatrixCSR<valueT>::sparseMatrixCSR () {
-  bool_matrix {std::typeid(valueT) != std::typeid(bool)};
-  m {0};
-  n {0};
-  nnz {0};
-  fill_id {0};
+  bool_matrix = typeid(valueT) != typeid(bool);
+  m = 0;
+  n = 0;
+  nnz = 0;
+  fill_id = 0;
 }
 
 /*! General constructor of class */
 template <typename valueT>
-sparseMatrixCSR<valueT>::sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t nonzero_elems, valueT init_val);
-  props {properties};
-  m {nlines};
-  n {ncols};
-  nnz {nonzero_elems};
+sparseMatrixCSR<valueT>::sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t ncols, 
+    uint64_t nonzero_elems, valueT init_val) {
+  bool_matrix = typeid(valueT) != typeid(bool);
+  props = properties;
+  m = nlines;
+  n = ncols;
+  nnz = nonzero_elems;
 
-  if ((nzz+m+1)*sizeof(uint64_t) < props.ram_limit) {
+  if ((nnz+m+1)*sizeof(uint64_t) < props.ram_limit) {
     if (!bool_matrix) a.resize (nnz, init_val);
     ia.resize (m+1, 0);
     ja.resize (nnz, 0);
@@ -110,7 +115,7 @@ sparseMatrixCSR<valueT>::~sparseMatrixCSR () {
  */
 template <typename valueT>
 void sparseMatrixCSR<valueT>::fill (uint64_t i, uint64_t j, valueT val) {
-  for (uint64_t l = last_id+1; l <= i; l++) {
+  for (uint64_t l = fill_id+1; l <= i; l++) {
     ia[l+1] = ia[l];
   }
 
@@ -132,6 +137,130 @@ template <typename valueT>
 void sparseMatrixCSR<valueT>::remove (uint64_t i, uint64_t j, valueT val) {
 }
 
+template <typename valueT>
+void sparseMatrixCSR<valueT>::save (std::string& name, int fileformat) {
+  std::ofstream matfp (name, std::ios_base::binary);
+
+  size_t matrix_type_size = matrixType.size();
+
+  /* Save explicitly matrix properties */
+  matfp.write (reinterpret_cast<const char*>(&matrix_type_size), sizeof(size_t));
+  matfp.write (reinterpret_cast<const char*>(matrixType.c_str()), matrix_type_size);
+
+  /* Save fileformat {BIN, SNAPPY} */
+  matfp.write (reinterpret_cast<const char*>(&fileformat), sizeof(int));
+
+  /* Matrix dimension */
+  matfp.write (reinterpret_cast<const char*>(&m), sizeof(uint64_t));
+  matfp.write (reinterpret_cast<const char*>(&nnz), sizeof(uint64_t));
+
+  if (fileformat == utils::BIN) {
+    matfp.write (reinterpret_cast<const char*>(ia.data()), ia.size()*sizeof(uint64_t));
+    matfp.write (reinterpret_cast<const char*>(ja.data()), ja.size()*sizeof(uint64_t));
+
+  } else if (fileformat == utils::SNAPPY) {
+    size_t ia_snappy_size = snappy::MaxCompressedLength64 (ia.size()*sizeof(uint64_t));
+    char* ia_snappy = new char [ia_snappy_size];
+    snappy::RawCompress64 (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t), ia_snappy, &ia_snappy_size);
+
+    matfp.write (reinterpret_cast<const char*>(&ia_snappy_size), sizeof(size_t));
+    matfp.write (reinterpret_cast<const char*>(ia_snappy), ia_snappy_size);
+    delete[] ia_snappy;
+
+    size_t ja_snappy_size = snappy::MaxCompressedLength64 (ja.size()*sizeof(uint64_t));
+    char* ja_snappy = new char [ja_snappy_size];
+    snappy::RawCompress64 (reinterpret_cast<char*>(ja.data()), ja.size()*sizeof(uint64_t), ja_snappy, &ja_snappy_size);
+
+    matfp.write (reinterpret_cast<const char*>(&ja_snappy_size), sizeof(size_t));
+    matfp.write (reinterpret_cast<const char*>(ja_snappy), ja_snappy_size);
+    delete[] ja_snappy;
+  }
+
+  matfp.close();
+}
+
+template <typename valueT>
+void sparseMatrixCSR<valueT>::load (std::string& name) {
+  this->clear ();
+  std::ifstream matfp (name, std::ios_base::binary);
+
+  /* Save explicitly matrix properties */
+  size_t matrix_type_size;
+  matfp.read (reinterpret_cast<char*>(&matrix_type_size), sizeof(size_t));
+
+  char read_matrix_type[matrix_type_size+1];
+  matfp.read (reinterpret_cast<char*>(read_matrix_type), matrix_type_size);
+  read_matrix_type[matrix_type_size] = '\0';
+
+  if (std::strcmp (read_matrix_type, matrixType.c_str()) != 0) {
+    std::ostringstream oss;
+    oss << "Wrong matrix format, found \'" << read_matrix_type << "\' while expecting \'"
+      << matrixType << "\'";
+    print_error (oss.str());
+    exit (-1);
+  }
+
+  /* Read fileformat {BIN, SNAPPY} */
+  int fileformat;
+  matfp.read (reinterpret_cast<char*>(&fileformat), sizeof(int));
+
+  /* Matrix dimension */
+  matfp.read (reinterpret_cast<char*>(&m), sizeof(uint64_t));
+  matfp.read (reinterpret_cast<char*>(&nnz), sizeof(uint64_t));
+
+  if ((m+1)*sizeof(uint64_t) + nnz*sizeof(uint64_t) < props.ram_limit) {
+    ia.resize (m+1, 0);
+    ja.resize (nnz, 0);
+  } else {
+    print_error ("Requested size is beyond \'ram_limit\'");
+    matfp.close();
+    exit (-1);
+  }
+
+  if (fileformat == utils::BIN) {
+    matfp.read (reinterpret_cast<char*>(ia.data()), ia.size()*sizeof(uint64_t));
+    matfp.read (reinterpret_cast<char*>(ja.data()), ja.size()*sizeof(uint64_t));
+
+  } else if (fileformat == utils::SNAPPY) {
+    bool uncomp_succeed;
+
+    size_t ia_snappy_size;
+    matfp.read (reinterpret_cast<char*>(&ia_snappy_size), sizeof(size_t));
+
+    char* ia_snappy = new char [ia_snappy_size];
+    matfp.read (reinterpret_cast<char*>(ia_snappy), ia_snappy_size);
+
+    uncomp_succeed = snappy::RawUncompress64 (ia_snappy, ia_snappy_size, reinterpret_cast<char*>(ia.data()));
+    delete[] ia_snappy;
+
+    if (!uncomp_succeed) {
+      print_error("SNAPPY uncompression of IA failed");
+
+      matfp.close();
+      exit (-1);
+    }
+
+    size_t ja_snappy_size;
+    matfp.read (reinterpret_cast<char*>(&ja_snappy_size), sizeof(size_t));
+
+    char* ja_snappy = new char [ja_snappy_size];
+    matfp.read (reinterpret_cast<char*>(ja_snappy), ja_snappy_size);
+
+    uncomp_succeed = snappy::RawUncompress64 (ja_snappy, ja_snappy_size, reinterpret_cast<char*>(ja.data()));
+    delete[] ja_snappy;
+
+    if (!uncomp_succeed) {
+      print_error("SNAPPY uncompression of JA failed");
+
+      matfp.close();
+      exit (-1);
+    }
+  }
+
+  fill_id = m;
+
+  matfp.close();
+}
 
 template <typename valueT>
 size_t sparseMatrixCSR<valueT>::size () const {
@@ -170,50 +299,38 @@ void sparseMatrixCSR<valueT>::clear() {
 
 template <typename valueT>
 template <typename vecValueT>
-vector<valueT>& operator* (sparseMatrixCSR<valueT>& lmat, vector<valueT>& rvec) {
-  if (lmat.n != rvec.m) {
+vector<vecValueT>& sparseMatrixCSR<valueT>::operator* (vector<vecValueT>& rvec) {
+  if (n != rvec.m) {
     std::ostringstream oss;
-    oss << "Error SpMat[" << lmat.m << "x" << lmat.n << "] with Vec[" << rvec.m << "]";
+    oss << "Error SpMat[" << m << "x" << n << "] with Vec[" << rvec.m << "]";
     print_error (oss.str());
     exit (-1);
   }
 
-  vector<valueT> res {rvec.props, lmat.m, 0.};
+  vector<vecValueT> res {rvec.props, m, 0.};
 
   if (!bool_matrix) {
-    for (uint64_t i = 0; i < lmat.m; i++) {
+    for (uint64_t i = 0; i < m; i++) {
       for (uint64_t ja_idx = ia[i]; ja_idx < ia[i+1]; ja_idx++) {
-        res[i] += lmat.a[ lmat.ja[ja_idx] ]*rvec[j];
+        res[i] += a[ja[ja_idx]]*rvec[ja[ja_idx]];
       }
     }
   } else {
-    for (uint64_t i = 0; i < lmat.m; i++) {
+    for (uint64_t i = 0; i < m; i++) {
       for (uint64_t ja_idx = ia[i]; ja_idx < ia[i+1]; ja_idx++) {
-        res[i] += rvec[j];
+        res[i] += rvec[ja[ja_idx]];
       }
     }
   }
 }
 
 template <typename valueT>
-sparseMatrixCSR<valueT>& operator* (valueT lval, sparseMatrixCSR<valueT>& rmat) {
+sparseMatrixCSR<valueT>& sparseMatrixCSR<valueT>::operator* (valueT rval) {
   if (bool_matrix) {
     print_warning ("Scalar-matrix product applied to a \'boolean\' matrix. Nothing will be changed...");
-    return rmat;
+    return *(this);
   } else {
-    sparseMatrixCSR<valueT> res {rmat};
-    for (auto& val : res) val *= lval;
-    return res;
-  }
-}
-
-template <typename valueT>
-sparseMatrixCSR<valueT>& operator* (sparseMatrixCSR<valueT>& lmat, valueT rval) {
-  if (bool_matrix) {
-    print_warning ("Scalar-matrix product applied to a \'boolean\' matrix. Nothing will be changed...");
-    return lmat;
-  } else {
-    sparseMatrixCSR<valueT> res {lmat};
+    sparseMatrixCSR<valueT> res {props, m, n, nnz};
     for (auto& val : res) val *= rval;
     return res;
   }
@@ -221,4 +338,4 @@ sparseMatrixCSR<valueT>& operator* (sparseMatrixCSR<valueT>& lmat, valueT rval) 
 
 } // namespace graphee
 
-#endif // sparseMatrixCSR_H
+#endif // GRAPHEE_SPARSE_MATRIX_CSR_H__

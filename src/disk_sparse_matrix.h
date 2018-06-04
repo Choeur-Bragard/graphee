@@ -1,5 +1,5 @@
-#ifndef GPE_DISKMAT_H
-#define GPE_DISKMAT_H
+#ifndef GRAPHEE_DISK_SPARSE_MATRIX_H__ 
+#define 
 
 #include <iostream>
 #include <fstream>
@@ -13,7 +13,7 @@
 #include <algorithm>
 
 #include <gzstream.h>
-#include <snappy.h>
+#include "snappy/snappy.h"
 
 #include "graphee.h"
 
@@ -515,4 +515,4 @@ void gpe_diskmat<gpe_mat_t>::close_tmp_blocks () {
 
 } // namespace graphee
 
-#endif // GPE_DISKMAT_H
+#endif // GRAPHEE_DISK_SPARSE_MATRIX_H__

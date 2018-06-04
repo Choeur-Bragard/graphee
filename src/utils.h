@@ -1,5 +1,5 @@
-#ifndef GPE_UTILS_H
-#define GPE_UTILS_H
+#ifndef GRAPHEE_UTILS_H__
+#define GRAPHEE_UTILS_H__
 
 #include <iostream>
 #include <sstream>
@@ -12,23 +12,20 @@
 
 namespace graphee {
 
-class gpe_utils {
+class utils {
 public:
-  enum {PLAIN, GZ};
-  static const int DIRECT = 0x00000001; 
-  static const int TRANS  = 0x00000010; 
-  static const int UO     = 0x00000100; 
+  enum {PLAIN, GZ, BIN, SNAPPY};
+  const int DIRECT = 0x00000001;
+  const int TRANS  = 0x00000010;
+  const int IB     = 0x00000100;
+  const int OB     = 0x00001000;
 };
-}
 
-size_t max_compress_size (size_t in_bytes);
-void compress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t& out_bytes);
-bool uncompress_snappy (char* in_data, size_t in_bytes, char* out_data, size_t out_bytes);
+void print_log (std::string message);
+void print_strong_log (std::string message);
+void print_warning (std::string message);
+void print_error (std::string message);
 
-void gpe_log (std::string message);
-void gpe_step (std::string message);
-void gpe_warning (std::string message);
-void gpe_error (std::string message);
+} // namespace graphee
 
-
-#endif // GPE_UTILS_H
+#endif // GRAPHEE_UTILS_H__

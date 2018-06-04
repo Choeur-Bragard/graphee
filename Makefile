@@ -2,7 +2,7 @@ CC = g++
 OPT = -std=c++11 -O3 -pthread
 #OPT = -std=c++11 -g -pthread
 INC = -I src/.
-LIB = -lgzstream -lsnappy -lz -lm
+LIB = -L src/snappy/build/libsnappy.a -lgzstream -lz -lm
 
 examples: split load vector matvecprod pagerank
 

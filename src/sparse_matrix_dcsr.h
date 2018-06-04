@@ -1,5 +1,5 @@
-#ifndef GPE_BSMAT_DCSR_H
-#define GPE_BSMAT_DCSR_H
+#ifndef GRAPHEE_SPARSE_MATRIX_DCSR_H__ 
+#define GRAPHEE_SPARSE_MATRIX_DCSR_H__ 
 
 #include <iostream>
 #include <fstream>
@@ -9,10 +9,9 @@
 #include <cstring>
 #include <limits>
 
-#include <snappy.h>
+#include "snappy/snappy.h"
 
-#include "gpe_utils.h"
-#include "gpe_props.h"
+#include "graphee.h"
 
 namespace graphee {
 
@@ -281,4 +280,4 @@ bool gpe_bsmat_dcsr<idx_t>::verify () {
 }
 } // graphee
 
-#endif // GPE_BSMAT_DCSR_H
+#endif // GRAPHEE_SPARSE_MATRIX_DCSR_H__
