@@ -3,16 +3,13 @@
 #include <vector>
 #include <string>
 
-#include "gpe_props.h"
-#include "gpe_diskmat.h"
-#include "gpe_bsmat_csr.h"
-
-using namespace graphee;
+#include "graphee.h"
 
 int main (int argc, char** argv) {
-  std::string name ("cc18q1");
-  gpe_props props (name, 98, 4,
-      8, 15, gpe_props::GB, 256, gpe_props::MB);
+  graphee::properties props = 
+      {"cc18q1", 98, 4, 8, 
+      15, graphee::properties::GB, 
+      256, graphee::properties::MB};
 
   std::ifstream filelist(argv[1]);
   std::vector<std::string> filenames;
@@ -22,7 +19,6 @@ int main (int argc, char** argv) {
     filenames.push_back(filename);
   }
 
-  gpe_diskmat<gpe_bsmat_csr<uint32_t>> dmat (props, "adj");
-
-  dmat.load_edgelist (filenames, gpe_utils::GZ, gpe_utils::UO | gpe_utils::TRANS);
+  graphee::diskSparseMatrix<bool> adjency_matrix {properties, "adj"};
+  adjency_matrix.load_edgelist(filenames);
 }
