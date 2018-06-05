@@ -77,7 +77,7 @@ private:
 
 template <typename matrixT>
 void diskSparseMatrix<matrixT>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  //read_and_split_list (filenames, ftype);
+  read_and_split_list (filenames, ftype);
   diskblock_manager ();
 }
 
@@ -134,7 +134,7 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
     std::swap (in_stream, out_stream);
     read_mtx.unlock();
 
-    std::thread gz_reader_thread {load_GZ, filenames[i], std::ref(in_stream), std::ref(read_mtx)};
+    std::thread gz_reader_thread (load_GZ, filenames[i], std::ref(in_stream), std::ref(read_mtx));
     gz_reader_thread.detach();
 
     while (!out_stream.eof()) {
@@ -145,23 +145,20 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
       block_id = from_id/props.window + to_id/props.window * props.nslices;
 
       if (edglst_pos[block_id] < maxElemsPerSortBlock) {
-        edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
-        edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
+        edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
+        edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
         edglst_pos[block_id] += 2;
-
       } else {
-        write_mtxs[block_id].lock ();
+        write_mtxs[block_id].lock();
         std::swap (edglst_in[block_id], edglst_out[block_id]);
 
-        std::thread sort_write_thread {sort_and_save_list, std::ref(edglst_out[block_id]), 
-          edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])};
+        std::thread sort_write_thread (sort_and_save_list, std::ref(edglst_out[block_id]), 
+          edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]));
         sort_write_thread.detach ();
 
-        edglst_pos[block_id] = 0;
-
-        edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
-        edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
-        edglst_pos[block_id] += 2;
+        edglst_in[block_id][0] = from_id; 
+        edglst_in[block_id][1] = to_id;
+        edglst_pos[block_id] = 2;
       }
     }
 
@@ -182,23 +179,20 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
     block_id = from_id/props.window + to_id/props.window * props.nslices;
 
     if (edglst_pos[block_id] < maxElemsPerSortBlock) {
-      edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
-      edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
+      edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
+      edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
       edglst_pos[block_id] += 2;
-
     } else {
       write_mtxs[block_id].lock ();
       std::swap (edglst_in[block_id], edglst_out[block_id]);
 
-      std::thread sort_write_thread {sort_and_save_list, std::ref(edglst_out[block_id]), 
-        edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])};
+      std::thread sort_write_thread (sort_and_save_list, std::ref(edglst_out[block_id]), 
+        edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]));
       sort_write_thread.detach ();
 
-      edglst_pos[block_id] = 0;
-
-      edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
-      edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
-      edglst_pos[block_id] += 2;
+      edglst_in[block_id][0] = from_id; 
+      edglst_in[block_id][1] = to_id;
+      edglst_pos[block_id] = 2;
     }
   }
   
@@ -207,7 +201,7 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
     if (edglst_pos[i] > 0) {
       write_mtxs[i].lock();
       sort_write_threads.push_back(std::thread {sort_and_save_list, std::ref(edglst_in[block_id]), 
-        std::ref(edglst_pos[block_id]), std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])});
+        edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])});
     }
   }
 
