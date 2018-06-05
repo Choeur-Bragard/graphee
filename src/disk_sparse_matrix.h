@@ -144,7 +144,7 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
 
       block_id = from_id/props.window + to_id/props.window * props.nslices;
 
-      if (edglst_pos[block_id] < maxElemsPerSortBlock) {
+      if (edglst_pos[block_id] < maxElemsPerSortBlock-1) {
         edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
         edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
         edglst_pos[block_id] += 2;
@@ -163,7 +163,7 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
     }
 
     std::ostringstream oss;
-    oss << "Sorted file " << filenames[i];
+    oss << "Sorted file " << filenames[i-1];
     print_strong_log (oss.str());
   }
 
@@ -178,7 +178,7 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
 
     block_id = from_id/props.window + to_id/props.window * props.nslices;
 
-    if (edglst_pos[block_id] < maxElemsPerSortBlock) {
+    if (edglst_pos[block_id] < maxElemsPerSortBlock-1) {
       edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
       edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
       edglst_pos[block_id] += 2;
@@ -195,13 +195,17 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
       edglst_pos[block_id] = 2;
     }
   }
+
+  std::ostringstream oss;
+  oss << "Sorted file " << filenames[filenames.size()-1];
+  print_strong_log (oss.str());
   
   std::vector<std::thread> sort_write_threads;
   for (uint64_t i = 0; i < props.nblocks; i++) {
-    if (edglst_pos[i] > 0) {
+    if (edglst_pos[i] > 2) {
       write_mtxs[i].lock();
-      sort_write_threads.push_back(std::thread {sort_and_save_list, std::ref(edglst_in[block_id]), 
-        edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])});
+      sort_write_threads.push_back(std::thread (sort_and_save_list, std::ref(edglst_in[block_id]), 
+        edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id])));
     }
   }
 

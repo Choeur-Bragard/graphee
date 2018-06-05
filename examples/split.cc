@@ -18,6 +18,8 @@ int main (int argc, char** argv) {
     filelist >> filename;
     filenames.push_back(filename);
   }
+  filenames.pop_back();
+  filelist.close();
 
   graphee::diskSparseMatrix<graphee::sparseMatrixCSR<bool>> 
     adjency_matrix {props, "adj"};
