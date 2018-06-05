@@ -233,7 +233,7 @@ void sparseMatrixCSR<valueT>::load (std::string name) {
     }
   }
 
-  fill_id = m;
+  fill_id = m-1;
 
   matfp.close();
 }
@@ -245,18 +245,18 @@ size_t sparseMatrixCSR<valueT>::size () {
 
 template <typename valueT>
 bool sparseMatrixCSR<valueT>::verify () {
-  if (fill_id < m) {
-    for (uint64_t l = fill_id+1; l <= m; l++) {
+  if (fill_id < m-1) {
+    for (uint64_t l = fill_id+1; l < m; l++) {
       ia[l+1] = ia[l];
     }
-    fill_id = m;
+    fill_id = m-1;
   }
 
   if (nnz == ia[m]) {
     return true;
   } else {
     std::ostringstream oss;
-    oss << "NNZ = " << nnz << " IA[M+1] = " << ia[m+1];
+    oss << "NNZ = " << nnz << " IA[M] = " << ia[m];
     print_warning (oss.str());
     return false;
   }

@@ -8,7 +8,7 @@
 int main (int argc, char** argv) {
   graphee::properties props =
     {std::string("cc18q1"), 98, 4, 8, 
-    15*graphee::properties::GB, 
+    10*graphee::properties::GB, 
     256*graphee::properties::MB};
 
   std::ifstream filelist(argv[1]);

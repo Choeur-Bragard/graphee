@@ -77,7 +77,7 @@ private:
 
 template <typename matrixT>
 void diskSparseMatrix<matrixT>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
-  read_and_split_list (filenames, ftype);
+  //read_and_split_list (filenames, ftype);
   diskblock_manager ();
 }
 
@@ -330,7 +330,7 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
   } else {
     mtx.lock();
     std::ostringstream log;
-    log << "Starting disk block conversion [" << line << ";" << col << "]";
+    log << "Starting disk block conversion [" << line << ";" << col << "] needs " << alloc_needs/(1UL << 20) << "MB";
     print_log (log.str());
     mtx.unlock();
   }
@@ -344,11 +344,11 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
 
   matrixT mat {props, props.window, props.window, nnz};
 
-  std::vector<uint64_t> offsets {nsections};
+  std::vector<uint64_t> offsets (nsections);
   for (uint64_t i = 0; i < nsections; i++) {
     offsets[i] = i*props.sort_limit;
   }
-  std::vector<uint64_t> ids {nsections, line*props.window};
+  std::vector<uint64_t> ids (nsections, line*props.window);
 
   uint64_t currentid {line*props.window};
   uint64_t minid {(line+1)*props.window};
@@ -357,21 +357,24 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
   uint64_t offl = line*props.window;
   uint64_t offc = col*props.window;
 
+  uint64_t nb = 0;
+
   while (currentid < (line+1)*props.window) {
     minid = (line+1)*props.window;
 
     for (uint64_t sec = 0; sec < nsections; sec++) {
-      if (ids[sec] == currentid && std::min(filelen, (sec+1)*props.sort_limit)) {
+      if (ids[sec] == currentid && offsets[sec] < std::min(filelen, (sec+1)*props.sort_limit)) {
         if (tmpfp.tellg() != offsets[sec]) {
           tmpfp.seekg(offsets[sec], tmpfp.beg);
         }
 
         while (offsets[sec] < std::min(filelen, (sec+1)*props.sort_limit)) {
-          tmpfp.read((char*)edge, 2*sizeof(uint64_t));
+          tmpfp.read(reinterpret_cast<char*> (edge), 2*sizeof(uint64_t));
 
           if (edge[0] == currentid) {
-            mat.fill (edge[0], edge[1], true);
+            mat.fill (edge[0]-offl, edge[1]-offc, true);
             offsets[sec] += 2*sizeof(uint64_t);
+            nb++;
           } else {
             ids[sec] = edge[0];
             break;
@@ -385,6 +388,8 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
     }
     currentid = minid;
   }
+
+  std::cout << line << " " << col << " " << nnz << " " << nb << std::endl;
 
   if (!mat.verify()) {
     mtx.lock();
