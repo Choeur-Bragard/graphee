@@ -28,22 +28,35 @@ namespace graphee {
 template <typename valueT>
 class sparseMatrixCSR {
 public:
-  sparseMatrixCSR ();
+  sparseMatrixCSR () : m(0), n(0), nnz(0) {}
+
   sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t ncols,
-      uint64_t nonzero_elems, valueT init_val = 0.);
-  ~sparseMatrixCSR ();
+      uint64_t nonzero_elems, valueT init_val = 0.) :
+    props(properties), m(nlines), n(ncols), nnz(nonzero_elems) {
+      bool_matrix = typeid(valueT) == typeid(bool);
+      if ((nnz+m+1)*sizeof(uint64_t) < props.ram_limit) {
+        if (!bool_matrix) a.resize (nnz, init_val);
+        ia.resize (m+1, 0);
+        ja.resize (nnz, 0);
+      } else {
+        print_error("Requested size is beyond \'ram_limit\'");
+        exit (-1);
+      }
+    }
+
+  ~sparseMatrixCSR () {}
 
   void fill   (uint64_t i, uint64_t j, valueT val);
   void insert (uint64_t i, uint64_t j, valueT val);
   void remove (uint64_t i, uint64_t j, valueT val);
 
-  void save (std::string& filename, int file_format = utils::BIN);
-  void load (std::string& filename);
+  void save (std::string filename, int file_format = utils::BIN);
+  void load (std::string filename);
 
-  size_t size () const;
-  bool verify () const;
+  size_t size ();
+  bool verify ();
 
-  bool empty () const;
+  bool empty ();
 
   void clear ();
 
@@ -63,7 +76,7 @@ private:
   std::vector<uint64_t> ia;
   std::vector<uint64_t> ja;
 
-  properties&& props;
+  properties& props;
 
   bool bool_matrix;
 
@@ -72,44 +85,6 @@ private:
   uint64_t nnz;
   uint64_t fill_id;
 }; // class sparseMatrixCSR
-
-/*! Empty constructor */
-template <typename valueT>
-sparseMatrixCSR<valueT>::sparseMatrixCSR () {
-  bool_matrix = typeid(valueT) == typeid(bool);
-  m = 0;
-  n = 0;
-  nnz = 0;
-  fill_id = 0;
-}
-
-/*! General constructor of class */
-template <typename valueT>
-sparseMatrixCSR<valueT>::sparseMatrixCSR (properties& properties, uint64_t nlines, uint64_t ncols, 
-    uint64_t nonzero_elems, valueT init_val) {
-  bool_matrix = typeid(valueT) == typeid(bool);
-  props = properties;
-  m = nlines;
-  n = ncols;
-  nnz = nonzero_elems;
-
-  if ((nnz+m+1)*sizeof(uint64_t) < props.ram_limit) {
-    if (!bool_matrix) a.resize (nnz, init_val);
-    ia.resize (m+1, 0);
-    ja.resize (nnz, 0);
-  } else {
-    print_error("Requested size is beyond \'ram_limit\'");
-    exit (-1);
-  }
-}
-
-/*! General destructor of the class */
-template <typename valueT>
-sparseMatrixCSR<valueT>::~sparseMatrixCSR () {
-  delete a;
-  delete ia;
-  delete ja;
-}
 
 /*! Filling the sparse matrix with sorted entries by
  * ascending lines id
@@ -139,7 +114,7 @@ void sparseMatrixCSR<valueT>::remove (uint64_t i, uint64_t j, valueT val) {
 }
 
 template <typename valueT>
-void sparseMatrixCSR<valueT>::save (std::string& name, int fileformat) {
+void sparseMatrixCSR<valueT>::save (std::string name, int fileformat) {
   std::ofstream matfp (name, std::ios_base::binary);
 
   size_t matrixType_size = matrixType.size();
@@ -181,7 +156,7 @@ void sparseMatrixCSR<valueT>::save (std::string& name, int fileformat) {
 }
 
 template <typename valueT>
-void sparseMatrixCSR<valueT>::load (std::string& name) {
+void sparseMatrixCSR<valueT>::load (std::string name) {
   this->clear ();
   std::ifstream matfp (name, std::ios_base::binary);
 
@@ -264,12 +239,12 @@ void sparseMatrixCSR<valueT>::load (std::string& name) {
 }
 
 template <typename valueT>
-size_t sparseMatrixCSR<valueT>::size () const {
+size_t sparseMatrixCSR<valueT>::size () {
   return (nnz+m+1)*sizeof(uint64_t);
 }
 
 template <typename valueT>
-bool sparseMatrixCSR<valueT>::verify () const {
+bool sparseMatrixCSR<valueT>::verify () {
   if (fill_id < m) {
     for (uint64_t l = fill_id+1; l <= m; l++) {
       ia[l+1] = ia[l];

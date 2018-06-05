@@ -14,16 +14,16 @@ public:
   properties (std::string name, uint64_t nvertices, uint64_t nslices, uint64_t nthreads, 
       size_t ram_limit, size_t sort_limit) :
 
-    name(name), nvertices(nvertices), nslices(nslices), nthreads(nthreads),
+    name(name), nvertices(nvertices*1000000), nslices(nslices), nthreads(nthreads),
     ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices*nslices), 
-    window(nvertices/nslices) {}
+    window(nvertices*1000000/nslices) {}
 
   ~properties () {}
 
-  const size_t B  {1};
-  const size_t KB {1UL << 10};
-  const size_t MB {1UL << 20};
-  const size_t GB {1UL << 30};
+  static const size_t B  {1};
+  static const size_t KB {1UL << 10};
+  static const size_t MB {1UL << 20};
+  static const size_t GB {1UL << 30};
 
   const std::string name;
   const uint64_t nvertices;

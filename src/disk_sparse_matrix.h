@@ -31,9 +31,13 @@ namespace graphee {
 template <typename matrixT>
 class diskSparseMatrix {
 public:
-  diskSparseMatrix ();
-  diskSparseMatrix (properties& properties, std::string name);
-  ~diskSparseMatrix ();
+  diskSparseMatrix () {}
+  diskSparseMatrix (properties& properties, std::string matrix_name) :
+    props(properties), name(matrix_name) 
+    {tmpfp = std::vector<std::fstream> (props.nblocks);}
+
+  ~diskSparseMatrix ()
+    {close_files ();}
 
   void load_edgelist (const std::vector<std::string>& filenames, int ftype = utils::GZ, int options = utils::TRANS);
 
@@ -44,7 +48,7 @@ public:
   bool empty () const;
 
 private:
-  properties&& props;
+  properties& props;
 
   std::vector<std::fstream> tmpfp;
 
@@ -70,22 +74,6 @@ private:
   void open_files (std::ios_base::openmode mode);
   void close_files ();
 };
-
-template <typename matrixT>
-diskSparseMatrix<matrixT>::diskSparseMatrix () {
-}
-
-template <typename matrixT>
-diskSparseMatrix<matrixT>::diskSparseMatrix (properties& properties, std::string matrix_name) {
-  props = {properties};
-  name = {matrix_name};
-  tmpfp = std::vector<std::fstream> (props.nblocks, {});
-}
-
-template <typename matrixT>
-diskSparseMatrix<matrixT>::~diskSparseMatrix () {
-  close_files ();
-}
 
 template <typename matrixT>
 void diskSparseMatrix<matrixT>::load_edgelist (const std::vector<std::string>& filenames, int ftype, int options) {
@@ -125,12 +113,12 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
 
   const uint64_t maxElemsPerSortBlock {props.sort_limit / sizeof(uint64_t)};
 
-  std::vector<std::vector<uint64_t>> edglst_in (props.nblocks, {maxElemsPerSortBlock, 0});
-  std::vector<std::vector<uint64_t>> edglst_out (props.nblocks, {maxElemsPerSortBlock, 0});
+  std::vector<std::vector<uint64_t>> edglst_in (props.nblocks, std::vector<uint64_t>(maxElemsPerSortBlock, 0));
+  std::vector<std::vector<uint64_t>> edglst_out (props.nblocks, std::vector<uint64_t>(maxElemsPerSortBlock, 0));
 
   std::vector<uint64_t> edglst_pos (props.nblocks, 0);
 
-  std::vector<std::mutex> write_mtxs (props.nblocks, {});
+  std::vector<std::mutex> write_mtxs (props.nblocks);
   std::mutex read_mtx;
 
   uint64_t block_id, from_id, to_id;
@@ -139,16 +127,14 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
   std::stringstream in_stream;
   std::stringstream out_stream;
 
-  for (auto& filename : filenames) {
-    if (filename == *(filenames.begin())) {
-      load_GZ (filename, in_stream, read_mtx);
-    }
+  load_GZ (filenames[0], in_stream, read_mtx);
 
+  for (uint64_t i = 1; i < filenames.size(); i++) {
     read_mtx.lock();
     std::swap (in_stream, out_stream);
     read_mtx.unlock();
 
-    std::thread gz_reader_thread {load_GZ, filename, std::ref(in_stream), std::ref(read_mtx)};
+    std::thread gz_reader_thread {load_GZ, filenames[i], std::ref(in_stream), std::ref(read_mtx)};
     gz_reader_thread.detach();
 
     while (!out_stream.eof()) {
@@ -159,8 +145,8 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
       block_id = from_id/props.window + to_id/props.window * props.nslices;
 
       if (edglst_pos[block_id] < maxElemsPerSortBlock) {
-        edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
-        edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
+        edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
+        edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
         edglst_pos[block_id] += 2;
 
       } else {
@@ -173,11 +159,15 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
 
         edglst_pos[block_id] = 0;
 
-        edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
-        edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
+        edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
+        edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
         edglst_pos[block_id] += 2;
       }
     }
+
+    std::ostringstream oss;
+    oss << "Sorted file " << filenames[i];
+    print_strong_log (oss.str());
   }
 
   read_mtx.lock();
@@ -192,8 +182,8 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
     block_id = from_id/props.window + to_id/props.window * props.nslices;
 
     if (edglst_pos[block_id] < maxElemsPerSortBlock) {
-      edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
-      edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
+      edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
+      edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
       edglst_pos[block_id] += 2;
 
     } else {
@@ -206,8 +196,8 @@ void diskSparseMatrix<matrixT>::read_and_split_list (const std::vector<std::stri
 
       edglst_pos[block_id] = 0;
 
-      edglst_in[block_id][edglst_pos[block_id]  ] = from_id; 
-      edglst_in[block_id][edglst_pos[block_id]+1] = to_id;
+      edglst_in[block_id].at(edglst_pos[block_id]  ) = from_id; 
+      edglst_in[block_id].at(edglst_pos[block_id]+1) = to_id;
       edglst_pos[block_id] += 2;
     }
   }
@@ -311,20 +301,20 @@ void diskSparseMatrix<matrixT>::diskblock_manager () {
 template <typename matrixT>
 void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dmat, uint64_t line, uint64_t col,
       std::fstream& tmpfp, size_t& alloc_mem, std::mutex& mtx, std::condition_variable& cond) {
-  properties&& props {dmat->props};
+  properties& props {dmat->props};
 
   tmpfp.seekg (0, tmpfp.end);
-  size_t filelen {tmpfp.tellg ()};
+  size_t filelen = tmpfp.tellg ();
   tmpfp.seekg (0, tmpfp.beg);
 
   uint64_t nnz = filelen/(2*sizeof(uint64_t));
   uint64_t nsections = filelen/props.sort_limit + (filelen%props.sort_limit == 0 ? 0 : 1);
 
   size_t alloc_needs {0};
-  if (typeid (matrixT::valueType) == typeid (bool)) {
+  if (typeid (typename matrixT::valueType) == typeid (bool)) {
     alloc_needs = (props.window+1+nnz)*sizeof(uint64_t);
   } else {
-    alloc_needs = (props.window+1+nnz)*sizeof(uint64_t) + nnz*sizeof(matrixT::valueType);
+    alloc_needs = (props.window+1+nnz)*sizeof(uint64_t) + nnz*sizeof(typename matrixT::valueType);
   }
 
   if (alloc_needs > props.ram_limit) {
@@ -380,7 +370,7 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
           tmpfp.read((char*)edge, 2*sizeof(uint64_t));
 
           if (edge[0] == currentid) {
-            mat.sorted_fill (edge[0], edge[1]);
+            mat.fill (edge[0], edge[1], true);
             offsets[sec] += 2*sizeof(uint64_t);
           } else {
             ids[sec] = edge[0];
@@ -399,14 +389,14 @@ void diskSparseMatrix<matrixT>::diskblock_builder (diskSparseMatrix<matrixT>* dm
   if (!mat.verify()) {
     mtx.lock();
     std::ostringstream err;
-    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' failed !";
+    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' failed !";
     print_error (err.str());
     mtx.unlock();
     return;
   } else {
     mtx.lock();
     std::ostringstream log;
-    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_type << "\' succeed !";
+    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' succeed !";
     print_log (log.str());
     mtx.unlock();
   }
