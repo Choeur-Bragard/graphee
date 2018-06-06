@@ -171,6 +171,7 @@ void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>
   ssp_load = &ss1;
   ssp_read = &ss2;
 
+  uint64_t nsec = 0; 
   load_GZ (filenames[0], ssp_load, &read_mtx);
 
   for (uint64_t i = 1; i < filenames.size(); i++) {
@@ -197,6 +198,10 @@ void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>
         mutexes[blockID].lock();
         std::memcpy(edlO[blockID], edlI[blockID],
             sizeof(uint64_t)*edlI_pos[blockID]);
+        if (blockID == 0) {
+          std::cout << "sec #" << nsec << " of size = " << edlI_pos[blockID] << std::endl;
+          nsec++;
+        }
         std::thread t(sort_and_save_list, edlO[blockID], edlI_pos[blockID],
             &(tmpfp[blockID]), &(mutexes[blockID]));
         t.detach();
@@ -234,6 +239,10 @@ void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>
       mutexes[blockID].lock();
       std::memcpy(edlO[blockID], edlI[blockID],
           sizeof(uint64_t)*maxElemsPerRamBlock);
+      if (blockID == 0) {
+        std::cout << "sec #" << nsec << " of size = " << edlI_pos[blockID] << std::endl;
+        nsec++;
+      }
       std::thread t(sort_and_save_list, edlO[blockID], edlI_pos[blockID],
           &(tmpfp[blockID]), &(mutexes[blockID]));
       t.detach();
@@ -246,10 +255,19 @@ void gpe_diskmat<gpe_mat_t>::read_and_split_list (const std::vector<std::string>
     }
   }
 
+  log.str("");
+  log << "Sorting file " << filenames[filenames.size()-1] << " with "
+    << bytes/1024/1024 << " MB";
+  gpe_log (log.str());
+
   for (uint64_t i = 0; i < props.nblocks; i++) {
     if (edlI_pos[i] > 0) {
       mutexes[i].lock();
       std::memcpy(edlO[i], edlI[i], sizeof(uint64_t)*edlI_pos[i]);
+      if (i == 0) {
+        std::cout << "sec #" << nsec << " of size = " << edlI_pos[i] << std::endl;
+        nsec++;
+      }
       std::thread t(sort_and_save_list, edlO[i], edlI_pos[i],
           &(tmpfp[i]), &(mutexes[i]));
       t.detach();

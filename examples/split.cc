@@ -21,6 +21,8 @@ int main (int argc, char** argv) {
     filelist >> filename;
     filenames.push_back(filename);
   }
+  filenames.pop_back();
+  filelist.close();
 
   gpe_diskmat<gpe_bsmat_csr<uint32_t>> dmat (props, "adj");
 
