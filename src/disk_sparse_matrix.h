@@ -178,11 +178,6 @@ void diskSparseMatrix<matrixT>::read_and_split_list(const std::vector<std::strin
       {
         write_mtxs[block_id].lock();
         std::swap(edglst_in[block_id], edglst_out[block_id]);
-        if (block_id == 0)
-        {
-          std::cout << "sec #" << nsec << " of size = " << edglst_pos[block_id] << std::endl;
-          nsec++;
-        }
 
         std::thread sort_write_thread(sort_and_save_list, std::ref(edglst_out[block_id]),
                                       edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]), block_id);
@@ -222,11 +217,6 @@ void diskSparseMatrix<matrixT>::read_and_split_list(const std::vector<std::strin
     {
       write_mtxs[block_id].lock();
       std::swap(edglst_in[block_id], edglst_out[block_id]);
-      if (block_id == 0)
-      {
-        std::cout << "sec #" << nsec << " of size = " << edglst_pos[block_id] << std::endl;
-        nsec++;
-      }
 
       std::thread sort_write_thread(sort_and_save_list, std::ref(edglst_out[block_id]),
                                     edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]), block_id);
@@ -248,13 +238,8 @@ void diskSparseMatrix<matrixT>::read_and_split_list(const std::vector<std::strin
     if (edglst_pos[i] > 2)
     {
       write_mtxs[i].lock();
-      if (i == 0)
-      {
-        std::cout << "sec #" << nsec << " of size = " << edglst_pos[i] << std::endl;
-        nsec++;
-      }
-      sort_write_threads.push_back(std::thread(sort_and_save_list, std::ref(edglst_in[block_id]),
-                                               edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]), block_id));
+      sort_write_threads.push_back(std::thread (sort_and_save_list, std::ref(edglst_in[i]),
+                                   edglst_pos[i], std::ref(tmpfp[i]), std::ref(write_mtxs[i]), i));
     }
   }
 
@@ -297,10 +282,6 @@ template <typename matrixT>
 void diskSparseMatrix<matrixT>::sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
                                                    std::fstream &ofp, std::mutex &mtx, uint64_t bid)
 {
-
-  if (bid == 0)
-    std::cout << "start block " << bid << " of size = " << nelems << std::endl;
-
   if (nelems % 2 != 0)
   {
     print_error("Wrong number of edges");
@@ -321,8 +302,6 @@ void diskSparseMatrix<matrixT>::sort_and_save_list(std::vector<uint64_t> &block,
   mtx.unlock();
 
   delete[] edgeptrs;
-  if (bid == 0)
-    std::cout << "sent block " << bid << " of size = " << nelems << std::endl;
 }
 
 template <typename matrixT>
@@ -469,8 +448,6 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
     }
     currentid = minid;
   }
-
-  std::cout << line << " " << col << " " << nnz << " " << nb << std::endl;
 
   if (!mat.verify())
   {
