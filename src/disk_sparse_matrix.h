@@ -328,10 +328,7 @@ void diskSparseMatrix<matrixT>::diskblock_manager()
 
   for (auto &thd : diskblock_threads)
   {
-    if (thd.joinable())
-    {
-      thd.join();
-    }
+    thd.join();
   }
 
   close_files();

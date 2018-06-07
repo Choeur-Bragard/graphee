@@ -1,5 +1,5 @@
-#ifndef GPE_PAGERANK_H
-#define GPE_PAGERANK_H
+#ifndef GRAPHEE_PAGERANK_H__
+#define GRAPHEE_PAGERANK_H__
 
 #include <iostream>
 #include <fstream>
@@ -13,66 +13,23 @@
 namespace graphee
 {
 
-template <typename gpe_dmat_t, typename gpe_dvec_t>
-class gpePageRank
+template <typename diskSpMatT>
+class pagerank
 {
 public:
-  gpePageRank(gpe_props props);
-  gpePageRank(gpe_props props, std::vector<std::string> filenames);
-  gpePageRank(gpe_props props, std::string adj_mat_name);
+  pagerank (properties& properties, diskSpMatT& adjency_matrix) : props(properties), adj_mat(adjency_matrix) {}
 
-  void calc_page_rank(uint64_t niter);
+  void compute_pagerank(uint64_t niter);
 
 private:
-  std::ostringstream log;
-  std::ostringstream wrn;
-  std::ostringstream err;
+  const float damping {0.85};
+  properties& props;
+  diskSpMatT& adj_mat;
 
-  gpe_props props;
-
-  gpe_dmat_t adj_mat;
-
-  gpe_dvec_t pagerank;
-  gpe_dvec_t pagerank_itp1;
-  gpe_dvec_t out_bounds;
-
-  float damp{0.85};
-}; // class gpePageRank
-
-template <typename gpe_dmat_t, typename gpe_dvec_t>
-gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank(gpe_props arg_props)
-{
-  props = arg_props;
-
-  adj_mat.init_diskmat(props, "adj");
-  pagerank.init_diskvec(props, "pr");
-  pagerank_itp1.init_diskvec(props, "prp1");
-  out_bounds.init_diskvec(props, "ob");
-}
-
-template <typename gpe_dmat_t, typename gpe_dvec_t>
-gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank(gpe_props arg_props, std::vector<std::string> filenames)
-{
-  props = arg_props;
-
-  adj_mat.init_diskmat(props, "adj");
-  pagerank.init_diskvec(props, "pr");
-  pagerank_itp1.init_diskvec(props, "prp1");
-  out_bounds.init_diskvec(props, "ob");
-
-  adj_mat.load_edgelist(filenames, gpe_utils::GZ, gpe_utils::UO | gpe_utils::TRANS);
-}
-
-template <typename gpe_dmat_t, typename gpe_dvec_t>
-gpePageRank<gpe_dmat_t, gpe_dvec_t>::gpePageRank(gpe_props arg_props, std::string adj_mat_name)
-{
-  props = arg_props;
-
-  adj_mat.init_diskmat(props, adj_mat_name);
-  pagerank.init_diskvec(props, "pr");
-  pagerank_itp1.init_diskvec(props, "prp1");
-  out_bounds.init_diskvec(props, "ob");
-}
+  diskVector<vector<float>> pagerank;
+  diskVector<vector<float>> pagerank_itp1;
+  diskVector<vector<float>> out_bounds;
+}; // class pagerank
 
 template <typename gpe_dmat_t, typename gpe_dvec_t>
 void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank(uint64_t niter)
@@ -108,4 +65,4 @@ void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank(uint64_t niter)
 
 } // namespace graphee
 
-#endif // GPE_PAGERANK_H
+#endif // GRAPEE_PAGERANK_H__
