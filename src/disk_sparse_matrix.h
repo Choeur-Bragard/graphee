@@ -70,16 +70,13 @@ private:
 
   void read_and_split_list(const std::vector<std::string> &filenames, int ftype = utils::GZ);
 
-  /* To be modernize for thread safe new C++11 features */
   static void sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
                                  std::fstream &fp, std::mutex &mtx, uint64_t bid);
 
-  /* To be modernize for thread safe new C++11 features */
   static void load_GZ(const std::string filename, std::stringstream &ss,
                       std::mutex &read_mtx);
 
   void diskblock_manager();
-  /* To be modernize for thread safe new C++11 features */
   static void diskblock_builder(diskSparseMatrix<matrixT> *dmat, uint64_t line, uint64_t col,
                                 std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx, std::condition_variable &cond);
 
