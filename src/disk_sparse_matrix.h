@@ -298,6 +298,9 @@ void diskSparseMatrix<matrixT>::sort_and_save_list(std::vector<uint64_t> &block,
                                                    std::fstream &ofp, std::mutex &mtx, uint64_t bid)
 {
 
+  if (bid == 0)
+    std::cout << "start block " << bid << " of size = " << nelems << std::endl;
+
   if (nelems % 2 != 0)
   {
     print_error("Wrong number of edges");
@@ -342,8 +345,8 @@ void diskSparseMatrix<matrixT>::diskblock_manager()
     {
       block_id = line + col * props.nslices;
 
-      diskblock_threads.push_back(std::thread{diskblock_builder, this, line, col, std::ref(tmpfp[block_id]),
-                                              std::ref(alloc_mem), std::ref(mtx), std::ref(cond)});
+      diskblock_threads.push_back(std::thread(diskblock_builder, this, line, col, std::ref(tmpfp[block_id]),
+                                              std::ref(alloc_mem), std::ref(mtx), std::ref(cond)));
     }
   }
 
