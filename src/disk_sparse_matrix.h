@@ -92,7 +92,7 @@ private:
 template <typename matrixT>
 void diskSparseMatrix<matrixT>::load_edgelist(const std::vector<std::string> &filenames, int ftype, int options)
 {
-  //read_and_split_list(filenames, ftype);
+  read_and_split_list(filenames, ftype);
   diskblock_manager();
 }
 
