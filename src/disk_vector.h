@@ -20,31 +20,33 @@
  *
  */
 
-namespace graphee {
+namespace graphee
+{
 
 template <typename gpe_vec_t>
-class gpe_diskvec {
+class gpe_diskvec
+{
 public:
-  gpe_diskvec ();
-  gpe_diskvec (gpe_props props, std::string vec_name); 
-  gpe_diskvec (gpe_props props, std::string vec_name, size_t n, 
-    typename gpe_vec_t::value_type init_val = 0);
+  gpe_diskvec();
+  gpe_diskvec(gpe_props props, std::string vec_name);
+  gpe_diskvec(gpe_props props, std::string vec_name, size_t n,
+              typename gpe_vec_t::value_type init_val = 0);
 
-  ~gpe_diskvec () {}
+  ~gpe_diskvec() {}
 
-  void init_diskvec (gpe_props props, std::string vec_name);
+  void init_diskvec(gpe_props props, std::string vec_name);
 
-  void get_vector_slice (uint64_t sliceID, gpe_vec_t& vec);
+  void get_vector_slice(uint64_t sliceID, gpe_vec_t &vec);
 
-  void swap (gpe_diskvec<gpe_vec_t>& vec);
+  void swap(gpe_diskvec<gpe_vec_t> &vec);
 
   template <typename gpe_dmat_t, typename gpe_dvec_t>
-  void alpha_mat_vec_prod (float alpha, gpe_dmat_t& dmat, gpe_dvec_t& dvec);
+  void alpha_mat_vec_prod(float alpha, gpe_dmat_t &dmat, gpe_dvec_t &dvec);
 
   typedef gpe_vec_t vector_type;
 
-  void operator+= (typename gpe_vec_t::value_type val);
-  void set_init_value (typename gpe_vec_t::value_type init_value);
+  void operator+=(typename gpe_vec_t::value_type val);
+  void set_init_value(typename gpe_vec_t::value_type init_value);
 
 private:
   gpe_props props;
@@ -54,153 +56,176 @@ private:
   std::ostringstream wrn;
   std::ostringstream err;
 
-  std::string get_slice_filename (uint64_t sliceID);
+  std::string get_slice_filename(uint64_t sliceID);
 }; // class gpe_diskvec
 
 template <typename gpe_vec_t>
-gpe_diskvec<gpe_vec_t>::gpe_diskvec () {
+gpe_diskvec<gpe_vec_t>::gpe_diskvec()
+{
 }
 
 template <typename gpe_vec_t>
-gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name) {
+gpe_diskvec<gpe_vec_t>::gpe_diskvec(gpe_props arg_props, std::string arg_vec_name)
+{
   props = arg_props;
   vec_name = arg_vec_name;
 
-  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
-    gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
-    exit (-1);
+  if (props.window * sizeof(typename gpe_vec_t::value_type) > props.ram_limit)
+  {
+    gpe_error("The \'gpe_vec\' size exceeds the \'ram_limit\'");
+    exit(-1);
   }
 }
 
 template <typename gpe_vec_t>
-gpe_diskvec<gpe_vec_t>::gpe_diskvec (gpe_props arg_props, std::string arg_vec_name, size_t n, 
-  typename gpe_vec_t::value_type init_val) {
+gpe_diskvec<gpe_vec_t>::gpe_diskvec(gpe_props arg_props, std::string arg_vec_name, size_t n,
+                                    typename gpe_vec_t::value_type init_val)
+{
   props = arg_props;
   vec_name = arg_vec_name;
 
-  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
-    gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
-    exit (-1);
+  if (props.window * sizeof(typename gpe_vec_t::value_type) > props.ram_limit)
+  {
+    gpe_error("The \'gpe_vec\' size exceeds the \'ram_limit\'");
+    exit(-1);
   }
 
-  set_init_value (init_val);
-  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
-    gpe_vec_t vec (props, props.window, init_val);
-    vec.save (get_slice_filename(sliceID));
+  set_init_value(init_val);
+  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++)
+  {
+    gpe_vec_t vec(props, props.window, init_val);
+    vec.save(get_slice_filename(sliceID));
   }
 }
 
 template <typename gpe_vec_t>
-void gpe_diskvec<gpe_vec_t>::init_diskvec (gpe_props arg_props, std::string arg_vec_name) {
+void gpe_diskvec<gpe_vec_t>::init_diskvec(gpe_props arg_props, std::string arg_vec_name)
+{
   props = arg_props;
   vec_name = arg_vec_name;
 
-  if (props.window*sizeof(typename gpe_vec_t::value_type) > props.ram_limit) {
-    gpe_error ("The \'gpe_vec\' size exceeds the \'ram_limit\'");
-    exit (-1);
+  if (props.window * sizeof(typename gpe_vec_t::value_type) > props.ram_limit)
+  {
+    gpe_error("The \'gpe_vec\' size exceeds the \'ram_limit\'");
+    exit(-1);
   }
 }
 
 template <typename gpe_vec_t>
-void gpe_diskvec<gpe_vec_t>::get_vector_slice (uint64_t sliceID, gpe_vec_t& vec) {
+void gpe_diskvec<gpe_vec_t>::get_vector_slice(uint64_t sliceID, gpe_vec_t &vec)
+{
   log.str("");
   log << "Start to load vector slice [" << sliceID << "]";
-  gpe_log (log.str());
+  gpe_log(log.str());
 
-  vec.clear ();
-  vec.load (get_slice_filename(sliceID));
+  vec.clear();
+  vec.load(get_slice_filename(sliceID));
 
   log.str("");
   log << "Loaded vector slice [" << sliceID << "]";
-  gpe_log (log.str());
+  gpe_log(log.str());
 }
 
 template <typename gpe_vec_t>
-std::string gpe_diskvec<gpe_vec_t>::get_slice_filename (uint64_t sliceID) {
+std::string gpe_diskvec<gpe_vec_t>::get_slice_filename(uint64_t sliceID)
+{
   std::ostringstream slicename;
   slicename << props.name << "_" << vec_name << "_dvecslc_" << sliceID << ".gpe";
   return slicename.str();
 }
 
 template <typename gpe_vec_t>
-void gpe_diskvec<gpe_vec_t>::swap (gpe_diskvec<gpe_vec_t>& vec) {
-  if (props.nvertices != vec.props.nvertices) {
+void gpe_diskvec<gpe_vec_t>::swap(gpe_diskvec<gpe_vec_t> &vec)
+{
+  if (props.nvertices != vec.props.nvertices)
+  {
     err.str("");
     err << "Could not swap vector \'" << vec_name << "\' and \'";
     err << vec.vec_name << "\' because dimensions are not equal";
-    gpe_error (err.str());
+    gpe_error(err.str());
   }
 
   int succed;
   std::ostringstream tmpname;
   tmpname << vec_name << "_swap_file.gpe";
-  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
-    succed = rename (get_slice_filename(sliceID).c_str(), tmpname.str().c_str());
-    if (succed != 0) {
+  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++)
+  {
+    succed = rename(get_slice_filename(sliceID).c_str(), tmpname.str().c_str());
+    if (succed != 0)
+    {
       err.str("");
       err << "Could not swap vector \'" << get_slice_filename(sliceID) << "\' to \'";
       err << tmpname.str() << "\'";
-      gpe_error (err.str());
+      gpe_error(err.str());
     }
 
-    succed = rename (vec.get_slice_filename(sliceID).c_str(), get_slice_filename(sliceID).c_str());
-    if (succed != 0) {
+    succed = rename(vec.get_slice_filename(sliceID).c_str(), get_slice_filename(sliceID).c_str());
+    if (succed != 0)
+    {
       err.str("");
       err << "Could not swap vector \'" << vec.get_slice_filename(sliceID) << "\' to \'";
       err << get_slice_filename(sliceID) << "\'";
-      gpe_error (err.str());
+      gpe_error(err.str());
     }
 
-    succed = rename (tmpname.str().c_str(), vec.get_slice_filename(sliceID).c_str());
-    if (succed != 0) {
+    succed = rename(tmpname.str().c_str(), vec.get_slice_filename(sliceID).c_str());
+    if (succed != 0)
+    {
       err.str("");
       err << "Could not swap vector \'" << tmpname.str() << "\' to \'";
       err << vec.get_slice_filename(sliceID) << "\'";
-      gpe_error (err.str());
+      gpe_error(err.str());
     }
   }
 }
 
 template <typename gpe_vec_t>
 template <typename gpe_dmat_t, typename gpe_dvec_t>
-void gpe_diskvec<gpe_vec_t>::alpha_mat_vec_prod (float alpha, gpe_dmat_t& dmat, gpe_dvec_t& dvec) {
-  gpe_vec_t res (props);
-  typename gpe_dvec_t::vector_type vec_arg (props);
-  typename gpe_dmat_t::matrix_type mat_arg (props);
+void gpe_diskvec<gpe_vec_t>::alpha_mat_vec_prod(float alpha, gpe_dmat_t &dmat, gpe_dvec_t &dvec)
+{
+  gpe_vec_t res(props);
+  typename gpe_dvec_t::vector_type vec_arg(props);
+  typename gpe_dmat_t::matrix_type mat_arg(props);
 
-  for (uint64_t line = 0; line < props.nslices; line++) {
-    get_vector_slice (line, res);
-    for (uint64_t col = 0; col < props.nslices; col++) {
-      dvec.get_vector_slice (col, vec_arg);
-      dmat.get_matrix_block (line, col, mat_arg);
+  for (uint64_t line = 0; line < props.nslices; line++)
+  {
+    get_vector_slice(line, res);
+    for (uint64_t col = 0; col < props.nslices; col++)
+    {
+      dvec.get_vector_slice(col, vec_arg);
+      dmat.get_matrix_block(line, col, mat_arg);
 
       res.alpha_mat_vec_prod(alpha, mat_arg, vec_arg);
     }
-    res.save (get_slice_filename(line));
+    res.save(get_slice_filename(line));
   }
 }
 
 template <typename gpe_vec_t>
-void gpe_diskvec<gpe_vec_t>::operator+= (typename gpe_vec_t::value_type val) {
-  gpe_vec_t vec (props);
-  for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++) {
-    vec.load (get_slice_filename(slice_id));
+void gpe_diskvec<gpe_vec_t>::operator+=(typename gpe_vec_t::value_type val)
+{
+  gpe_vec_t vec(props);
+  for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++)
+  {
+    vec.load(get_slice_filename(slice_id));
     vec += val;
-    vec.save (get_slice_filename(slice_id));
+    vec.save(get_slice_filename(slice_id));
   }
 }
 
 template <typename gpe_vec_t>
-void gpe_diskvec<gpe_vec_t>::set_init_value (typename gpe_vec_t::value_type init_val) {
+void gpe_diskvec<gpe_vec_t>::set_init_value(typename gpe_vec_t::value_type init_val)
+{
   log.str("");
   log << "Init value of vector \'" << vec_name << "\'";
-  gpe_log (log.str());
-  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++) {
-    gpe_vec_t vec (props, props.window, init_val);
-    vec.save (get_slice_filename(sliceID));
+  gpe_log(log.str());
+  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++)
+  {
+    gpe_vec_t vec(props, props.window, init_val);
+    vec.save(get_slice_filename(sliceID));
   }
 }
 
-} // namesapce graphee
+} // namespace graphee
 
 #endif // GPE_DISKVEC_H
