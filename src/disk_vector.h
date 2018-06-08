@@ -28,10 +28,9 @@ class disk_vector
 {
 public:
   disk_vector() {}
-  disk_vector(properties &properties,
-              std::string vector_name,
+  disk_vector(properties &properties, std::string vector_name,
               typename vectorT::valueType init_val = 0)
-      : props(properties), name(vector_name)
+    : props(properties), name(vector_name)
   {
     if (props.window * sizeof(typename vectorT::valueType) > props.ram_limit)
     {
@@ -40,7 +39,7 @@ public:
     }
 
     vectorT tmp(props, props.window, init_val);
-    for (uint64_t slice_id = 0; slice_id < props.nslices; i++)
+    for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++)
     {
       tmp.save(get_slice_filename(slice_id));
     }
@@ -61,11 +60,10 @@ private:
   std::string name;
 
   std::string get_slice_filename(uint64_t slice_id);
-}; // class disk_vector
+};  // class disk_vector
 
 template <typename vectorT>
-vectorT &
-disk_vector<vectorT>::get_slice(uint64_t slice_id)
+vectorT &disk_vector<vectorT>::get_slice(uint64_t slice_id)
 {
   std::ostringstream oss;
   oss << "Load slice [" << slice_id << "] of vector \'" << name << "\'";
@@ -76,11 +74,10 @@ disk_vector<vectorT>::get_slice(uint64_t slice_id)
 }
 
 template <typename vectorT>
-std::string
-disk_vector<vectorT>::get_slice_filename(uint64_t slice_id)
+std::string disk_vector<vectorT>::get_slice_filename(uint64_t slice_id)
 {
   std::ostringstream slicename;
-  slicename << props.name << "_" << vec_name << "_dvecslc_" << slice_id
+  slicename << props.name << "_" << name << "_dvecslc_" << slice_id
             << ".gpe";
   return slicename.str();
 }
@@ -90,76 +87,56 @@ void disk_vector<vectorT>::swap(disk_vector<vectorT> &vec)
 {
   if (props.nvertices != vec.props.nvertices)
   {
-    err.str("");
-    err << "Could not swap vector \'" << vec_name << "\' and \'";
-    err << vec.vec_name << "\' because dimensions are not equal";
-    gpe_error(err.str());
+    std::ostringstream oss;
+    oss << "Could not swap vector \'" << name << "\' and \'";
+    oss << vec.name << "\' because dimensions are not equal";
+    print_error(oss.str());
   }
 
   int succed;
   std::ostringstream tmpname;
-  tmpname << vec_name << "_swap_file.gpe";
-  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++)
+  tmpname << name << "_swap_file.gpe";
+  for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++)
   {
-    succed = rename(get_slice_filename(sliceID).c_str(), tmpname.str().c_str());
+    succed = rename(get_slice_filename(slice_id).c_str(),
+                    tmpname.str().c_str());
+
     if (succed != 0)
     {
-      err.str("");
-      err << "Could not swap vector \'" << get_slice_filename(sliceID)
+      std::ostringstream oss;
+      oss << "Could not swap vector \'" << get_slice_filename(slice_id)
           << "\' to \'";
-      err << tmpname.str() << "\'";
-      gpe_error(err.str());
+      oss << tmpname.str() << "\'";
+      print_error(oss.str());
     }
 
-    succed = rename(vec.get_slice_filename(sliceID).c_str(),
-                    get_slice_filename(sliceID).c_str());
+    succed = rename(vec.get_slice_filename(slice_id).c_str(),
+                    get_slice_filename(slice_id).c_str());
+
     if (succed != 0)
     {
-      err.str("");
-      err << "Could not swap vector \'" << vec.get_slice_filename(sliceID)
+      std::ostringstream oss;
+      oss << "Could not swap vector \'" << vec.get_slice_filename(slice_id)
           << "\' to \'";
-      err << get_slice_filename(sliceID) << "\'";
-      gpe_error(err.str());
+      oss << get_slice_filename(slice_id) << "\'";
+      print_error(oss.str());
     }
 
-    succed =
-        rename(tmpname.str().c_str(), vec.get_slice_filename(sliceID).c_str());
+    succed = rename(tmpname.str().c_str(),
+                    vec.get_slice_filename(slice_id).c_str());
+
     if (succed != 0)
     {
-      err.str("");
-      err << "Could not swap vector \'" << tmpname.str() << "\' to \'";
-      err << vec.get_slice_filename(sliceID) << "\'";
-      gpe_error(err.str());
+      std::ostringstream oss;
+      oss << "Could not swap vector \'" << tmpname.str() << "\' to \'";
+      oss << vec.get_slice_filename(slice_id) << "\'";
+      print_error(oss.str());
     }
   }
 }
 
 template <typename vectorT>
-template <typename gpe_dmat_t, typename gpe_dvec_t>
-void disk_vector<vectorT>::alpha_mat_vec_prod(float alpha,
-                                              gpe_dmat_t &dmat,
-                                              gpe_dvec_t &dvec)
-{
-  vectorT res(props);
-  typename gpe_dvec_t::vector_type vec_arg(props);
-  typename gpe_dmat_t::matrix_type mat_arg(props);
-
-  for (uint64_t line = 0; line < props.nslices; line++)
-  {
-    get_vector_slice(line, res);
-    for (uint64_t col = 0; col < props.nslices; col++)
-    {
-      dvec.get_vector_slice(col, vec_arg);
-      dmat.get_matrix_block(line, col, mat_arg);
-
-      res.alpha_mat_vec_prod(alpha, mat_arg, vec_arg);
-    }
-    res.save(get_slice_filename(line));
-  }
-}
-
-template <typename vectorT>
-void disk_vector<vectorT>::operator+=(typename vectorT::value_type val)
+disk_vector<vectorT>& disk_vector<vectorT>::operator+=(typename vectorT::valueType val)
 {
   vectorT vec(props);
   for (uint64_t slice_id = 0; slice_id < props.nslices; slice_id++)
@@ -168,21 +145,10 @@ void disk_vector<vectorT>::operator+=(typename vectorT::value_type val)
     vec += val;
     vec.save(get_slice_filename(slice_id));
   }
+
+  return (*this);
 }
 
-template <typename vectorT>
-void disk_vector<vectorT>::set_init_value(typename vectorT::value_type init_val)
-{
-  log.str("");
-  log << "Init value of vector \'" << vec_name << "\'";
-  gpe_log(log.str());
-  for (uint64_t sliceID = 0; sliceID < props.nslices; sliceID++)
-  {
-    vectorT vec(props, props.window, init_val);
-    vec.save(get_slice_filename(sliceID));
-  }
-}
+}  // namespace graphee
 
-} // namespace graphee
-
-#endif // GRAPHEE_DISKVEC_H__
+#endif  // GRAPHEE_DISKVEC_H__
