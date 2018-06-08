@@ -42,6 +42,11 @@ template <typename matrixT>
 class diskSparseMatrix
 {
 public:
+  using matrixType = matrixT;
+
+  template <typename vectorT>
+  friend class vector;
+
   diskSparseMatrix() {}
   diskSparseMatrix(properties &properties, std::string matrix_name) : props(properties), name(matrix_name)
   {
@@ -56,8 +61,6 @@ public:
   void load_edgelist(const std::vector<std::string> &filenames, int ftype = utils::GZ, int options = utils::TRANS);
 
   matrixT &get_block(uint64_t line, uint64_t col);
-
-  using matrixType = matrixT;
 
   bool empty() const;
 

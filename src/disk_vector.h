@@ -51,6 +51,9 @@ public:
 
   void swap(disk_vector<vectorT> &rvec);
 
+  template <typename diskMatrixT>
+  void add_xmatvec_prod (typename vectorT::valueType x, diskMatrixT& mat, disk_vector<vectorT>& vec);
+
   disk_vector<vectorT> &operator+=(typename vectorT::valueType val);
 
   using vectorType = vectorT;
@@ -147,6 +150,31 @@ disk_vector<vectorT>& disk_vector<vectorT>::operator+=(typename vectorT::valueTy
   }
 
   return (*this);
+}
+
+template <typename vectorT>
+template <typename diskMatrixT>
+void add_xmatvec_prod (typename vectorT::valueType x, diskMatrixT& dmat, disk_vector<vectorT>& dvec)
+{
+  if (mat.n != vec.m) {
+    std::ostringstream oss;
+    oss << "Wrong dimensions in Matrix-Vector product";
+    print_error(oss.str());
+    exit(-1);
+  }
+
+  for (uint64_t line = 0; line < props.nslices; line++)
+  {
+    vectorT lvec (std::move(this->get_slice(line));
+    for (uint64_t col = 0; col < props.nslices; col++)
+    {
+      diskMatrixT::matrixType smat (std::move(dmat.get_block(line, col)));
+      vectorT rvec (std::move(dvec->get_slice(col));
+
+      lvec += x*smat*rvec;
+    }
+    lvec.save(this->get_slice_filename(line));
+  }
 }
 
 }  // namespace graphee

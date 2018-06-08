@@ -27,7 +27,7 @@ class vector : public std::vector<valueT>
 {
 public:
   vector() : std::vector<valueT>() {}
-  vector(properties &properties, size_t m, valueT init_value = 0) : std::vector<valueT>(m, init_value), props(properties) {}
+  vector(properties &properties, size_t m, valueT init_value = 0) : std::vector<valueT>(m, init_value), m(m), props(properties) {}
   ~vector() {}
 
   void save(std::string name, int fileformat = utils::BIN);
@@ -42,6 +42,7 @@ public:
 
 private:
   properties &&props;
+  uint64_t m;
 
 }; // class graphee::vector
 

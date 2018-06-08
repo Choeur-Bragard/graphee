@@ -4,19 +4,12 @@ OPT = -std=c++11 -O3 -pthread
 INC = -I src/.
 LIB = src/snappy/build/libsnappy.a -lgzstream -lz -lm
 
-examples: split load vector matvecprod pagerank
+all: examples doc
 
-pagerank: examples/pagerank.cc src/utils.cc
-	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
+doc: .doxyconf
+	doxygen .doxyconf
 
-matvecprod: examples/matvecprod.cc src/utils.cc
-	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
-
-vector: examples/vector.cc src/utils.cc
-	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
+examples: split
 
 split: examples/split.cc src/utils.cc
-	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
-
-load: examples/load.cc src/utils.cc
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
