@@ -27,7 +27,8 @@ class vector : public std::vector<valueT>
 {
 public:
   vector() : std::vector<valueT>() {}
-  vector(properties &properties, size_t m, valueT init_value = 0) : std::vector<valueT>(m, init_value), m(m), props(properties) {}
+  vector(properties *properties, size_t m, valueT init_value = 0) :
+    std::vector<valueT>(m, init_value), props(properties) {}
   ~vector() {}
 
   void save(std::string name, int fileformat = utils::BIN);
@@ -35,14 +36,19 @@ public:
 
   vector<valueT> &operator+=(vector<valueT> rvec);
   vector<valueT> &operator+=(valueT val);
+  vector<valueT> &operator*=(valueT val);
+
 
   const std::string vectorType{"vector"};
 
+  uint64_t get_lines();
+
   using valueType = valueT;
 
+  properties* get_properties();
+
 private:
-  properties &&props;
-  uint64_t m;
+  properties *props;
 
 }; // class graphee::vector
 
@@ -70,9 +76,9 @@ void vector<valueT>::save(std::string name, int fileformat)
   }
   else if (fileformat == utils::SNAPPY)
   {
-    size_t vec_snappy_size = max_compress_size(this->size() * sizeof(valueT));
+    size_t vec_snappy_size = snappy::MaxCompressedLength64(this->size() * sizeof(valueT));
     char *vec_snappy = new char[vec_snappy_size];
-    snappy::RawCompress64(reinterpret_cast<char *>(this->data()), this->size() * sizeof(valueT), vec_snappy, vec_snappy_size);
+    snappy::RawCompress64(reinterpret_cast<char *>(this->data()), this->size() * sizeof(valueT), vec_snappy, &vec_snappy_size);
 
     vecfp.write(reinterpret_cast<const char *>(&vec_snappy_size), sizeof(size_t));
     vecfp.write(reinterpret_cast<const char *>(vec_snappy), vec_snappy_size);
@@ -113,7 +119,7 @@ void vector<valueT>::load(std::string name)
   size_t m;
   vecfp.read(reinterpret_cast<char *>(&m), sizeof(size_t));
 
-  if (m * sizeof(valueT) < props.ram_limit)
+  if (m * sizeof(valueT) < props->ram_limit)
   {
     this->resize(m, 0);
   }
@@ -181,6 +187,27 @@ vector<valueT> &vector<valueT>::operator+=(valueT val)
   }
 
   return (*this);
+}
+
+template <typename valueT>
+vector<valueT> &vector<valueT>::operator*=(valueT val)
+{
+  for (uint64_t i = 0; i < this->size(); i++)
+  {
+    this->at(i) *= val;
+  }
+
+  return (*this);
+}
+
+template <typename valueT>
+properties* vector<valueT>::get_properties() {
+  return props;
+}
+
+template <typename valueT>
+uint64_t vector<valueT>::get_lines() {
+  return this->size();
 }
 
 } // namespace graphee
