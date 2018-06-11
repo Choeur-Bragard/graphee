@@ -26,9 +26,12 @@ template <typename valueT>
 class vector : public std::vector<valueT>
 {
 public:
-  vector() : std::vector<valueT>() {}
+  vector(properties *properties) :
+    std::vector<valueT>(), props(properties) {}
+
   vector(properties *properties, size_t m, valueT init_value = 0) :
     std::vector<valueT>(m, init_value), props(properties) {}
+
   ~vector() {}
 
   void save(std::string name, int fileformat = utils::BIN);
@@ -37,7 +40,6 @@ public:
   vector<valueT> &operator+=(vector<valueT> rvec);
   vector<valueT> &operator+=(valueT val);
   vector<valueT> &operator*=(valueT val);
-
 
   const std::string vectorType{"vector"};
 

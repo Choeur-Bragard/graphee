@@ -30,7 +30,7 @@ template <typename valueT>
 class sparseMatrixCSR : public sparseBMatrixCSR
 {
 public:
-  sparseMatrixCSR() : sparseBMatrixCSR()
+  sparseMatrixCSR(properties *properties) : sparseBMatrixCSR(properties)
   {
     if (typeid(valueT) == typeid(bool))
     {

@@ -27,7 +27,7 @@ namespace graphee
 class sparseBMatrixCSR
 {
 public:
-  sparseBMatrixCSR() : props(nullptr), m(0), n(0), nnz(0) {}
+  sparseBMatrixCSR(properties *properties) : props(properties), m(0), n(0), nnz(0) {}
 
   sparseBMatrixCSR(properties *properties, uint64_t nlines, uint64_t ncols,
                   uint64_t nonzero_elems) : props(properties), m(nlines),

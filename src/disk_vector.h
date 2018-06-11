@@ -27,7 +27,7 @@ template <typename vectorT>
 class diskVector
 {
 public:
-  diskVector() {}
+  diskVector(properties *properties) : props(properties) {}
   diskVector(properties *properties, std::string vector_name,
              typename vectorT::valueType init_val = 0)
       : props(properties), name(vector_name), m(properties->nvertices)
@@ -74,7 +74,7 @@ vectorT &diskVector<vectorT>::get_slice(uint64_t slice_id)
   oss << "Load slice [" << slice_id << "] of vector \'" << name << "\'";
   print_log(oss.str());
 
-  vectorT& res = *new vectorT;
+  vectorT& res = *new vectorT(props);
   res.load(get_slice_filename(slice_id));
 
   return res;
@@ -170,8 +170,7 @@ void diskVector<vectorT>::add_xmatvec_prod(typename vectorT::valueType x, diskMa
 
   for (uint64_t line = 0; line < props->nslices; line++)
   {
-//    vectorT lvec(std::move(this->get_slice(line)));
-    vectorT &lvec = this->get_slice(line);
+    vectorT lvec(std::move(this->get_slice(line)));
     for (uint64_t col = 0; col < props->nslices; col++)
     {
       typename diskMatrixT::matrixType smat(std::move(dmat.get_block(line, col)));

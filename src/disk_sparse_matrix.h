@@ -47,7 +47,7 @@ public:
   template <typename vectorT>
   friend class vector;
 
-  diskSparseMatrix() : props(nullptr) {}
+  diskSparseMatrix(properties *properties) : props(properties) {}
   diskSparseMatrix(properties *properties, std::string matrix_name) : props(properties), name(matrix_name),
     m(properties->nvertices), n(properties->nvertices)
   {
@@ -107,7 +107,7 @@ matrixT &diskSparseMatrix<matrixT>::get_block(uint64_t line, uint64_t col)
   oss << "Start to load disk block [" << line << ":" << col << "]";
   print_log(oss.str());
 
-  matrixT& mat = *new matrixT;
+  matrixT& mat = *new matrixT(props);
   mat.load(get_block_filename(line, col));
 
   return mat;
