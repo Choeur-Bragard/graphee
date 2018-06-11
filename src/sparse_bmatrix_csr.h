@@ -180,6 +180,7 @@ void sparseBMatrixCSR::load(std::string name)
   /* Matrix dimension */
   matfp.read(reinterpret_cast<char *>(&m), sizeof(uint64_t));
   matfp.read(reinterpret_cast<char *>(&nnz), sizeof(uint64_t));
+  n = m;
 
   if ((m + 1) * sizeof(uint64_t) + nnz * sizeof(uint64_t) < props->ram_limit)
   {
@@ -292,7 +293,7 @@ vector<vecValueT> &sparseBMatrixCSR::operator*(vector<vecValueT> &rvec)
     exit(-1);
   }
 
-  vector<vecValueT> res(rvec.get_properties(), m, 0.);
+  vector<vecValueT> &res = *new vector<vecValueT>(rvec.get_properties(), m, 0.);
 
   for (uint64_t i = 0; i < m; i++)
   {
@@ -301,6 +302,8 @@ vector<vecValueT> &sparseBMatrixCSR::operator*(vector<vecValueT> &rvec)
       res[i] += rvec[ja[ja_idx]];
     }
   }
+
+  return res;
 }
 
 uint64_t sparseBMatrixCSR::get_lines() {
