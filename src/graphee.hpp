@@ -8,5 +8,6 @@
 #include "disk_sparse_matrix.hpp"
 #include "disk_vector.hpp"
 #include "vector.hpp"
+#include "pagerank.hpp"
 
 #endif // GRAPHEE_H

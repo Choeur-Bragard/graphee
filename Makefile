@@ -9,10 +9,13 @@ all: examples
 docs: .doxyconf
 	doxygen .doxyconf
 
-examples: split matvecprod
+examples: split matvecprod pagerak
 
 split: examples/split.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
 matvecprod: examples/matvecprod.cpp src/utils.cpp
+	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
+
+pagerank: examples/pagerank.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)

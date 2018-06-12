@@ -28,6 +28,8 @@ template <typename VectorT>
 class DiskVector
 {
 public:
+  DiskVector() : props(nullptr) {}
+
   DiskVector(Properties *properties) : props(properties) {}
 
   DiskVector(Properties *properties, std::string vector_name,
@@ -47,11 +49,25 @@ public:
     }
   }
 
+  DiskVector(DiskVector<VectorT> &&vec) : props(vec.props), name(vec.name), m(vec.props->nvertices)
+  {
+    vec.props = nullptr;
+    vec.name = "";
+    vec.m = 0;
+  }
+
   ~DiskVector() {}
 
   VectorT &get_slice(uint64_t slice_id);
 
   void swap(DiskVector<VectorT> &rvec);
+
+  DiskVector<VectorT> &operator=(DiskVector &&vec)
+  {
+    std::swap(props, vec.props);
+    std::swap(name, vec.name);
+    std::swap(m, vec.m);
+  }
 
   template <typename DiskMatrixT>
   void add_xmatvec_prod(typename VectorT::ValueType x, DiskMatrixT &mat, DiskVector<VectorT> &vec);

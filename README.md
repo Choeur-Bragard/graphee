@@ -1,5 +1,5 @@
 # Graphee :chart_with_upwards_trend:
-Graphee is a light-weight code written in C++ to compute graphs properties, such as:
+Graphee is a light-weight code written in C++ to compute graph properties, such as:
 PageRank, TrustRank, harmonic centrality, etc...
 
 **NOTE: For now on, the code contains all the needed tools for the PageRank, but the example will arrive soon. This means in less than a week** :tada:

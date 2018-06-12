@@ -1,0 +1,6 @@
+[submodule "src/snappy"]
+	path = src/snappy
+	url = https://github.com/NoelM/snappy.git
+[submodule "src/sort"]
+	path = src/sort
+	url = https://github.com/swenson/sort.git

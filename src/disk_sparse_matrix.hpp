@@ -113,7 +113,7 @@ MatrixT &DiskSparseMatrix<MatrixT>::get_block(uint64_t line, uint64_t col)
 template <typename MatrixT>
 bool DiskSparseMatrix<MatrixT>::empty() const
 {
-  return (props->nvertices == 0);
+  return (props == nullptr);
 }
 
 /*! Reads the raw edgelist files
