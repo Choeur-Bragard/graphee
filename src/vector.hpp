@@ -40,7 +40,7 @@ public:
   void save(std::string name, int fileformat = utils::BIN);
   void load(std::string name);
 
-  vector<valueT> &operator+=(vector<valueT> rvec);
+  vector<valueT> &operator+=(vector<valueT>& rvec);
   vector<valueT> &operator+=(valueT val);
   vector<valueT> &operator*=(valueT val);
 
@@ -165,7 +165,7 @@ void vector<valueT>::load(std::string name)
 }
 
 template <typename valueT>
-vector<valueT> &vector<valueT>::operator+=(vector<valueT> rvec)
+vector<valueT> &vector<valueT>::operator+=(vector<valueT>& rvec)
 {
   if (this->size() != rvec.size())
   {

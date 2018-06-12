@@ -9,8 +9,7 @@
 
 #include <cstdio>
 
-#include "sparse_bmatrix_csr.hpp"
-#include "sparse_matrix_csr.hpp"
+#include "disk_sparse_matrix.hpp"
 #include "vector.hpp"
 
 /* \brief Vector saved by slices within disk
