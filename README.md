@@ -2,21 +2,20 @@
 Graphee is a light-weight code written in C++ to compute graphs properties, such as:
 PageRank, TrustRank, harmonic centrality, etc...
 
-**NOTE: For now on, the code contains only guidelines. The full PageRank may arrive soon,
-this means less than a week** :tada:
+**NOTE: For now on, the code contains all the needed tools for the PageRank, but the example will arrive soon. This means in less than a week** :tada:
 
 ## What's the purpose of Graphee?
 In order to improve search engine results, one has compute some values from the graph of the web.
 Actually, some famous works are known like the
-[*PageRank*](http://infolab.stanford.edu/pub/papers/google.pdf) or the 
+[*PageRank*](http://infolab.stanford.edu/pub/papers/google.pdf) or the
 [*TrustRank*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf) algorithms. They were
-booth indispensable to make their search engine pertinent and spam proof.
+booth indispensable to make their search engines pertinent and spam proof.
 
-However, with time the graph of the web has became wider and wider. It clearly contains more than a
-dozen of billion vertices and at least ten times more edges. Some, has chosen to persist in full-RAM
-computations and using distributed framework as *Hadoop* or *Spark*. While, some other approaches as 
+However, with time the graph of the web has become wider and wider. It clearly contains more than a
+dozen billion vertices and at least ten times more edges. Some, has chosen to persist in full-RAM
+computations and using distributed framework as *Hadoop* or *Spark*. While, some other approaches as
 [*GraphChi*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf) or
-[*m-flash*](https://www.cc.gatech.edu/~dchau/papers/16-pkdd-mflash.pdf) are using serialization methods, 
+[*m-flash*](https://www.cc.gatech.edu/~dchau/papers/16-pkdd-mflash.pdf) are using serialization methods,
 but both limited by `uint32_t` for the vertex ids.
 
 ### Graphee's innovations
@@ -24,7 +23,7 @@ Thus, we propose to develop software able to handle `uint64` and still performin
 on a single laptop (sometimes with an external hard-drive for wide graphs).
 
 The graph is converted into an adjacency matrix and then saved with the fully-tested (since 70's)
-[Compressed Sparse Row (CSR) matrix format](https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_(CSR,_CRS_or_Yale_format)).
+[Compressed Sparse Row (CSR) matrix format](https://en.wikipedia.org/wiki/Sparse_matrix).
 The serialization is done by dividing vectors into slices, and matrices into blocks, with sizes
 not exceeding the RAM-limit of the computer.
 
@@ -41,8 +40,7 @@ Technically we use `pthread` and `OpenMP` technologies for the parallel calculat
 The full support or `CUDA` standards is one of the major properties to be included soon !
 
 ## Examples & functionalities
-**NOTE: For now on, the code contains only guidelines. The full PageRank example may arrive soon, 
-this means less than a week** :tada:
+**NOTE: For now on, the code contains all the needed tools for the PageRank, but the example will arrive soon. This means in less than a week** :tada:
 
 ## Contributing
 Please first read `CONRTIBUTING.md` and propose what you want or you can fix or add functionalities detailed
