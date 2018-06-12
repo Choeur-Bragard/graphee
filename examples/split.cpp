@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "graphee.h"
+#include "graphee.hpp"
 
 int main (int argc, char** argv) {
   graphee::properties

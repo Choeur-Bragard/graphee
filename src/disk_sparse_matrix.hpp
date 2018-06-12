@@ -15,9 +15,9 @@
 #include <gzstream.h>
 #include "snappy/snappy.h"
 
-#include "utils.h"
-#include "properties.h"
-#include "vector.h"
+#include "utils.hpp"
+#include "properties.hpp"
+#include "vector.hpp"
 
 #define SORT_NAME gpe
 #define SORT_TYPE uint64_t *

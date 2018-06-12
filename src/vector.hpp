@@ -7,10 +7,11 @@
 #include <vector>
 #include <string>
 
-#include "utils.h"
-#include "properties.h"
+#include "utils.hpp"
+#include "properties.hpp"
 
-#include "sparse_matrix_csr.h"
+#include "sparse_bmatrix_csr.hpp"
+#include "sparse_matrix_csr.hpp"
 
 namespace graphee
 {

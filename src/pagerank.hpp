@@ -8,7 +8,7 @@
 #include <cstring>
 #include <vector>
 
-#include "graphee.h"
+#include "graphee.hpp"
 
 namespace graphee
 {

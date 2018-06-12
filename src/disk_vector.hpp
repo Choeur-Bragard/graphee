@@ -9,7 +9,9 @@
 
 #include <cstdio>
 
-#include "graphee.h"
+#include "sparse_bmatrix_csr.hpp"
+#include "sparse_matrix_csr.hpp"
+#include "vector.hpp"
 
 /* \brief Vector saved by slices within disk
  *

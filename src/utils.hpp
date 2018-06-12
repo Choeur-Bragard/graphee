@@ -8,8 +8,6 @@
 #include <ctime>
 #include <iomanip>
 
-#include <snappy.h>
-
 namespace graphee
 {
 

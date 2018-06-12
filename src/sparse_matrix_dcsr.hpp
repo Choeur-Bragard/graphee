@@ -11,7 +11,7 @@
 
 #include "snappy/snappy.h"
 
-#include "graphee.h"
+#include "graphee.hpp"
 
 namespace graphee
 {

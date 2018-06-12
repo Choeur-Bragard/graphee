@@ -11,8 +11,8 @@ docs: .doxyconf
 
 examples: split matvecprod
 
-split: examples/split.cc src/utils.cc
+split: examples/split.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
-matvecprod: examples/matvecprod.cc src/utils.cc
+matvecprod: examples/matvecprod.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)

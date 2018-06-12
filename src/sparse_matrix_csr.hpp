@@ -10,11 +10,10 @@
 
 #include "snappy/snappy.h"
 
-#include "utils.h"
-#include "properties.h"
+#include "utils.hpp"
+#include "properties.hpp"
 
-#include "vector.h"
-#include "sparse_bmatrix_csr.h"
+#include "sparse_bmatrix_csr.hpp"
 
 namespace graphee
 {
@@ -35,6 +34,7 @@ public:
     if (typeid(valueT) == typeid(bool))
     {
       print_error ("Do not use \'sparseMatrixCSR<bool>\', instead use \'sparseBMatrixCSR\'");
+      exit(-1);
     }
   }
 
@@ -45,6 +45,7 @@ public:
     if (typeid(valueT) == typeid(bool))
     {
       print_error ("Do not use \'sparseMatrixCSR<bool>\', instead use \'sparseBMatrixCSR\'");
+      exit(-1);
     }
 
     if ((nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(valueT) < props->ram_limit)
@@ -57,6 +58,8 @@ public:
       exit(-1);
     }
   }
+
+  sparseMatrixCSR(sparseMatrixCSR<valueT> &&mat) : sparseBMatrixCSR(std::move(mat)), a(std::move(mat.a)) {}
 
   ~sparseMatrixCSR() {
     a.clear();

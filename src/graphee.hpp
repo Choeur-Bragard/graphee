@@ -1,12 +1,12 @@
 #ifndef GRAPHEE_H
 #define GRAPHEE_H
 
-#include "properties.h"
-#include "utils.h"
-#include "sparse_matrix_csr.h"
-#include "sparse_bmatrix_csr.h"
-#include "disk_sparse_matrix.h"
-#include "disk_vector.h"
-#include "vector.h"
+#include "properties.hpp"
+#include "utils.hpp"
+#include "sparse_matrix_csr.hpp"
+#include "sparse_bmatrix_csr.hpp"
+#include "disk_sparse_matrix.hpp"
+#include "disk_vector.hpp"
+#include "vector.hpp"
 
 #endif // GRAPHEE_H
