@@ -28,6 +28,7 @@ class diskVector
 {
 public:
   diskVector(properties *properties) : props(properties) {}
+
   diskVector(properties *properties, std::string vector_name,
              typename vectorT::valueType init_val = 0)
       : props(properties), name(vector_name), m(properties->nvertices)
