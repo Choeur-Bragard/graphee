@@ -27,16 +27,12 @@ namespace graphee
 class sparseBMatrixCSR
 {
 public:
-  sparseBMatrixCSR(properties *properties) : props(properties), m(0), n(0), nnz(0)
-  {
-    std::cout << "SpBMat empty" << std::endl;
-  }
+  sparseBMatrixCSR(properties *properties) : props(properties), m(0), n(0), nnz(0) {}
 
   sparseBMatrixCSR(properties *properties, uint64_t nlines, uint64_t ncols,
                    uint64_t nonzero_elems) : props(properties), m(nlines),
-    n(ncols), nnz(nonzero_elems)
+                                             n(ncols), nnz(nonzero_elems)
   {
-    std::cout << "SpBMat full" << std::endl;
     if ((nnz + m + 1) * sizeof(uint64_t) < props->ram_limit)
     {
       ia.resize(m + 1, 0);
@@ -49,9 +45,17 @@ public:
     }
   }
 
+  sparseBMatrixCSR(sparseBMatrixCSR &&mat) : props(mat.props), m(mat.m), n(mat.n),
+                                             nnz(mat.nnz), ia(std::move(mat.ia)), ja(std::move(mat.ja))
+  {
+    mat.props = nullptr;
+    mat.m = 0;
+    mat.n = 0;
+    mat.nnz = 0;
+  }
+
   ~sparseBMatrixCSR()
   {
-    std::cout << "SpBMat destructor" << std::endl;
     ia.clear();
     ja.clear();
   }
@@ -162,7 +166,6 @@ void sparseBMatrixCSR::save(std::string name, int fileformat)
 
 void sparseBMatrixCSR::load(std::string name)
 {
-  this->clear();
   std::ifstream matfp(name, std::ios_base::binary);
 
   /* Save explicitly matrix properties */
@@ -191,7 +194,7 @@ void sparseBMatrixCSR::load(std::string name)
   matfp.read(reinterpret_cast<char *>(&nnz), sizeof(uint64_t));
   n = m;
 
-  if ((m + 1) * sizeof(uint64_t) + nnz * sizeof(uint64_t) < props->ram_limit)
+  if ((nnz + m + 1) * sizeof(uint64_t) < props->ram_limit)
   {
     ia.resize(m + 1, 0);
     ja.resize(nnz, 0);

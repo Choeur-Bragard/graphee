@@ -173,11 +173,11 @@ void diskVector<vectorT>::add_xmatvec_prod(typename vectorT::valueType x, diskMa
     vectorT lvec (std::move(this->get_slice(line)));
     for (uint64_t col = 0; col < props->nslices; col++)
     {
-      typename diskMatrixT::matrixType smat (std::move(dmat.get_block(line, col)));
-      vectorT rvec (std::move(dvec.get_slice(col)));
+      typename diskMatrixT::matrixType smat = std::move(dmat.get_block(line, col));
+      //vectorT rvec (std::move(dvec.get_slice(col)));
 
-      rvec *= x;
-      lvec += smat * rvec;
+      //rvec *= x;
+      //lvec += smat * rvec;
     }
     lvec.save(this->get_slice_filename(line));
   }
