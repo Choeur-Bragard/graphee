@@ -23,7 +23,7 @@ int main (int argc, char** argv) {
   graphee::DiskVector<graphee::Vector<float>>
     pagerank_itp1 (&props, "prp1", 0.);
 
-  pagerank_itp1.add_xmatvec_prod (1., adjacncy_matrix, pagerank);
+  pagerank_itp1.add_xmatvec_prod (1., adjacency_matrix, pagerank);
 
   pagerank_itp1.swap(pagerank);
 
