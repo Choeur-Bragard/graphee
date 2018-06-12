@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_DISKVEC_H__
-#define GRAPHEE_DISKVEC_H__
+#ifndef GRAPHEE_DISKVEC_HPP__
+#define GRAPHEE_DISKVEC_HPP__
 
 #include <fstream>
 #include <iostream>
@@ -24,66 +24,66 @@
 namespace graphee
 {
 
-template <typename vectorT>
-class diskVector
+template <typename VectorT>
+class DiskVector
 {
 public:
-  diskVector(properties *properties) : props(properties) {}
+  DiskVector(Properties *properties) : props(properties) {}
 
-  diskVector(properties *properties, std::string vector_name,
-             typename vectorT::valueType init_val = 0)
-      : props(properties), name(vector_name), m(properties->nvertices)
+  DiskVector(Properties *properties, std::string vector_name,
+             typename VectorT::ValueType init_val = 0)
+    : props(properties), name(vector_name), m(properties->nvertices)
   {
-    if (props->window * sizeof(typename vectorT::valueType) > props->ram_limit)
+    if (props->window * sizeof(typename VectorT::ValueType) > props->ram_limit)
     {
       print_error("The \'graphee::vector\' size exceeds the \'ram_limit\'");
       exit(-1);
     }
 
-    vectorT tmp(props, props->window, init_val);
+    VectorT tmp(props, props->window, init_val);
     for (uint64_t slice_id = 0; slice_id < props->nslices; slice_id++)
     {
       tmp.save(get_slice_filename(slice_id));
     }
   }
 
-  ~diskVector() {}
+  ~DiskVector() {}
 
-  vectorT &get_slice(uint64_t slice_id);
+  VectorT &get_slice(uint64_t slice_id);
 
-  void swap(diskVector<vectorT> &rvec);
+  void swap(DiskVector<VectorT> &rvec);
 
-  template <typename diskMatrixT>
-  void add_xmatvec_prod(typename vectorT::valueType x, diskMatrixT &mat, diskVector<vectorT> &vec);
+  template <typename DiskMatrixT>
+  void add_xmatvec_prod(typename VectorT::ValueType x, DiskMatrixT &mat, DiskVector<VectorT> &vec);
 
-  diskVector<vectorT> &operator+=(typename vectorT::valueType val);
+  DiskVector<VectorT> &operator+=(typename VectorT::ValueType val);
 
-  using vectorType = vectorT;
+  using VectorType = VectorT;
 
   uint64_t m;
 
 private:
-  properties *props;
+  Properties *props;
   std::string name;
 
   std::string get_slice_filename(uint64_t slice_id);
-}; // class diskVector
+}; // class DiskVector
 
-template <typename vectorT>
-vectorT &diskVector<vectorT>::get_slice(uint64_t slice_id)
+template <typename VectorT>
+VectorT &DiskVector<VectorT>::get_slice(uint64_t slice_id)
 {
   std::ostringstream oss;
   oss << "Load slice [" << slice_id << "] of vector \'" << name << "\'";
   print_log(oss.str());
 
-  vectorT& res = *new vectorT(props);
+  VectorT& res = *new VectorT(props);
   res.load(get_slice_filename(slice_id));
 
   return res;
 }
 
-template <typename vectorT>
-std::string diskVector<vectorT>::get_slice_filename(uint64_t slice_id)
+template <typename VectorT>
+std::string DiskVector<VectorT>::get_slice_filename(uint64_t slice_id)
 {
   std::ostringstream slicename;
   slicename << props->name << "_" << name << "_dvecslc_" << slice_id
@@ -91,8 +91,8 @@ std::string diskVector<vectorT>::get_slice_filename(uint64_t slice_id)
   return slicename.str();
 }
 
-template <typename vectorT>
-void diskVector<vectorT>::swap(diskVector<vectorT> &vec)
+template <typename VectorT>
+void DiskVector<VectorT>::swap(DiskVector<VectorT> &vec)
 {
   if (props->nvertices != vec.props->nvertices)
   {
@@ -144,10 +144,10 @@ void diskVector<vectorT>::swap(diskVector<vectorT> &vec)
   }
 }
 
-template <typename vectorT>
-diskVector<vectorT> &diskVector<vectorT>::operator+=(typename vectorT::valueType val)
+template <typename VectorT>
+DiskVector<VectorT> &DiskVector<VectorT>::operator+=(typename VectorT::ValueType val)
 {
-  vectorT vec(props);
+  VectorT vec(props);
   for (uint64_t slice_id = 0; slice_id < props->nslices; slice_id++)
   {
     vec.load(get_slice_filename(slice_id));
@@ -158,9 +158,9 @@ diskVector<vectorT> &diskVector<vectorT>::operator+=(typename vectorT::valueType
   return (*this);
 }
 
-template <typename vectorT>
-template <typename diskMatrixT>
-void diskVector<vectorT>::add_xmatvec_prod(typename vectorT::valueType x, diskMatrixT &dmat, diskVector<vectorT> &dvec)
+template <typename VectorT>
+template <typename DiskMatrixT>
+void DiskVector<VectorT>::add_xmatvec_prod(typename VectorT::ValueType x, DiskMatrixT &dmat, DiskVector<VectorT> &dvec)
 {
   if (dmat.n != dvec.m)
   {
@@ -172,11 +172,11 @@ void diskVector<vectorT>::add_xmatvec_prod(typename vectorT::valueType x, diskMa
 
   for (uint64_t line = 0; line < props->nslices; line++)
   {
-    vectorT lvec (std::move(this->get_slice(line)));
+    VectorT lvec (std::move(this->get_slice(line)));
     for (uint64_t col = 0; col < props->nslices; col++)
     {
-      typename diskMatrixT::matrixType smat = std::move(dmat.get_block(line, col));
-      vectorT rvec (std::move(dvec.get_slice(col)));
+      typename DiskMatrixT::MatrixType smat = std::move(dmat.get_block(line, col));
+      VectorT rvec (std::move(dvec.get_slice(col)));
 
       rvec *= x;
       lvec += smat * rvec;

@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_UTILS_H__
-#define GRAPHEE_UTILS_H__
+#ifndef GRAPHEE_UTILS_HPP__
+#define GRAPHEE_UTILS_HPP__
 
 #include <iostream>
 #include <sstream>
@@ -11,7 +11,7 @@
 namespace graphee
 {
 
-class utils
+class Utils
 {
 public:
   enum
@@ -34,4 +34,4 @@ void print_error(std::string message);
 
 } // namespace graphee
 
-#endif // GRAPHEE_UTILS_H__
+#endif // GRAPHEE_UTILS_HPP__

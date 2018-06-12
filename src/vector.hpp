@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_VECTOR_H__
-#define GRAPHEE_VECTOR_H__
+#ifndef GRAPHEE_VECTOR_HPP__
+#define GRAPHEE_VECTOR_HPP__
 
 #include <iostream>
 #include <fstream>
@@ -16,57 +16,57 @@
 namespace graphee
 {
 
-/*! \brief Graphee vector class
+/*! \brief Graphee Vector class
  *         Includes load/dump of data on disk
  *
  * It contains overloaded operators for operations
  * with `sparseMatrix*` classes
  */
 
-template <typename valueT>
-class vector : public std::vector<valueT>
+template <typename ValueT>
+class Vector : public std::vector<ValueT>
 {
 public:
-  vector(properties *properties) :
-    std::vector<valueT>(), props(properties) {}
+  Vector(Properties *properties) :
+    std::vector<ValueT>(), props(properties) {}
 
-  vector(properties *properties, size_t m, valueT init_value = 0) :
-    std::vector<valueT>(m, init_value), props(properties) {}
+  Vector(Properties *properties, size_t m, ValueT init_value = 0) :
+    std::vector<ValueT>(m, init_value), props(properties) {}
 
-  vector(vector &&vec) : std::vector<valueT>(std::move(vec)), props(vec.props) {}
+  Vector(Vector &&vec) : std::vector<ValueT>(std::move(vec)), props(vec.props) {}
 
-  ~vector() {}
+  ~Vector() {}
 
-  void save(std::string name, int fileformat = utils::BIN);
+  void save(std::string name, int fileformat = Utils::BIN);
   void load(std::string name);
 
-  vector<valueT> &operator+=(vector<valueT>& rvec);
-  vector<valueT> &operator+=(valueT val);
-  vector<valueT> &operator*=(valueT val);
+  Vector<ValueT> &operator+=(Vector<ValueT>& rvec);
+  Vector<ValueT> &operator+=(ValueT val);
+  Vector<ValueT> &operator*=(ValueT val);
 
-  const std::string vectorType{"vector"};
+  const std::string vector_typename{"Vector"};
 
   uint64_t get_lines();
 
-  using valueType = valueT;
+  using ValueType = ValueT;
 
-  properties* get_properties();
+  Properties* get_properties();
 
 private:
-  properties *props;
+  Properties *props;
 
-}; // class graphee::vector
+}; // class graphee::Vector
 
-template <class valueT>
-void vector<valueT>::save(std::string name, int fileformat)
+template <class ValueT>
+void Vector<ValueT>::save(std::string name, int fileformat)
 {
   std::ofstream vecfp(name, std::ios_base::binary);
 
-  size_t vectorType_size = vectorType.size();
+  size_t vector_typename_size = vector_typename.size();
 
-  /* Save explicitly vector properties */
-  vecfp.write(reinterpret_cast<const char *>(&vectorType_size), sizeof(size_t));
-  vecfp.write(reinterpret_cast<const char *>(vectorType.c_str()), vectorType_size);
+  /* Save explicitly Vector properties */
+  vecfp.write(reinterpret_cast<const char *>(&vector_typename_size), sizeof(size_t));
+  vecfp.write(reinterpret_cast<const char *>(vector_typename.c_str()), vector_typename_size);
 
   /* Save fileformat {BIN, SNAPPY} */
   vecfp.write(reinterpret_cast<const char *>(&fileformat), sizeof(int));
@@ -75,15 +75,15 @@ void vector<valueT>::save(std::string name, int fileformat)
   size_t vec_size = this->size();
   vecfp.write(reinterpret_cast<const char *>(&vec_size), sizeof(size_t));
 
-  if (fileformat == utils::BIN)
+  if (fileformat == Utils::BIN)
   {
-    vecfp.write(reinterpret_cast<const char *>(this->data()), this->size() * sizeof(valueT));
+    vecfp.write(reinterpret_cast<const char *>(this->data()), this->size() * sizeof(ValueT));
   }
-  else if (fileformat == utils::SNAPPY)
+  else if (fileformat == Utils::SNAPPY)
   {
-    size_t vec_snappy_size = snappy::MaxCompressedLength64(this->size() * sizeof(valueT));
+    size_t vec_snappy_size = snappy::MaxCompressedLength64(this->size() * sizeof(ValueT));
     char *vec_snappy = new char[vec_snappy_size];
-    snappy::RawCompress64(reinterpret_cast<char *>(this->data()), this->size() * sizeof(valueT), vec_snappy, &vec_snappy_size);
+    snappy::RawCompress64(reinterpret_cast<char *>(this->data()), this->size() * sizeof(ValueT), vec_snappy, &vec_snappy_size);
 
     vecfp.write(reinterpret_cast<const char *>(&vec_snappy_size), sizeof(size_t));
     vecfp.write(reinterpret_cast<const char *>(vec_snappy), vec_snappy_size);
@@ -93,25 +93,25 @@ void vector<valueT>::save(std::string name, int fileformat)
   vecfp.close();
 }
 
-template <class valueT>
-void vector<valueT>::load(std::string name)
+template <class ValueT>
+void Vector<ValueT>::load(std::string name)
 {
   this->clear();
   std::ifstream vecfp(name, std::ios_base::binary);
 
-  /* Save explicitly vector properties */
-  size_t vectorType_size;
-  vecfp.read(reinterpret_cast<char *>(&vectorType_size), sizeof(size_t));
+  /* Save explicitly Vector properties */
+  size_t vector_typename_size;
+  vecfp.read(reinterpret_cast<char *>(&vector_typename_size), sizeof(size_t));
 
-  char read_vectorType[vectorType_size + 1];
-  vecfp.read(reinterpret_cast<char *>(read_vectorType), vectorType_size);
-  read_vectorType[vectorType_size] = '\0';
+  char read_vector_typename[vector_typename_size + 1];
+  vecfp.read(reinterpret_cast<char *>(read_vector_typename), vector_typename_size);
+  read_vector_typename[vector_typename_size] = '\0';
 
-  if (std::strcmp(read_vectorType, vectorType.c_str()) != 0)
+  if (std::strcmp(read_vector_typename, vector_typename.c_str()) != 0)
   {
     std::ostringstream err;
-    err << "Wrong vector format, found \'" << read_vectorType << "\' while expecting \'"
-        << vectorType << "\'";
+    err << "Wrong Vector format, found \'" << read_vector_typename << "\' while expecting \'"
+        << vector_typename << "\'";
     print_error(err.str());
     exit(-1);
   }
@@ -124,7 +124,7 @@ void vector<valueT>::load(std::string name)
   size_t m;
   vecfp.read(reinterpret_cast<char *>(&m), sizeof(size_t));
 
-  if (m * sizeof(valueT) < props->ram_limit)
+  if (m * sizeof(ValueT) < props->ram_limit)
   {
     this->resize(m, 0);
   }
@@ -135,11 +135,11 @@ void vector<valueT>::load(std::string name)
     exit(-1);
   }
 
-  if (fileformat == utils::BIN)
+  if (fileformat == Utils::BIN)
   {
-    vecfp.read(reinterpret_cast<char *>(this->data()), this->size() * sizeof(valueT));
+    vecfp.read(reinterpret_cast<char *>(this->data()), this->size() * sizeof(ValueT));
   }
-  else if (fileformat == utils::SNAPPY)
+  else if (fileformat == Utils::SNAPPY)
   {
     bool uncomp_succeed;
 
@@ -164,13 +164,13 @@ void vector<valueT>::load(std::string name)
   vecfp.close();
 }
 
-template <typename valueT>
-vector<valueT> &vector<valueT>::operator+=(vector<valueT>& rvec)
+template <typename ValueT>
+Vector<ValueT> &Vector<ValueT>::operator+=(Vector<ValueT>& rvec)
 {
   if (this->size() != rvec.size())
   {
     std::ostringstream oss;
-    oss << "Different sizes of left and right vectors";
+    oss << "Different sizes of left and right Vectors";
     print_error(oss.str());
     exit(-1);
   }
@@ -183,8 +183,8 @@ vector<valueT> &vector<valueT>::operator+=(vector<valueT>& rvec)
   return (*this);
 }
 
-template <typename valueT>
-vector<valueT> &vector<valueT>::operator+=(valueT val)
+template <typename ValueT>
+Vector<ValueT> &Vector<ValueT>::operator+=(ValueT val)
 {
   for (uint64_t i = 0; i < this->size(); i++)
   {
@@ -194,8 +194,8 @@ vector<valueT> &vector<valueT>::operator+=(valueT val)
   return (*this);
 }
 
-template <typename valueT>
-vector<valueT> &vector<valueT>::operator*=(valueT val)
+template <typename ValueT>
+Vector<ValueT> &Vector<ValueT>::operator*=(ValueT val)
 {
   for (uint64_t i = 0; i < this->size(); i++)
   {
@@ -205,16 +205,18 @@ vector<valueT> &vector<valueT>::operator*=(valueT val)
   return (*this);
 }
 
-template <typename valueT>
-properties* vector<valueT>::get_properties() {
+template <typename ValueT>
+Properties* Vector<ValueT>::get_properties()
+{
   return props;
 }
 
-template <typename valueT>
-uint64_t vector<valueT>::get_lines() {
+template <typename ValueT>
+uint64_t Vector<ValueT>::get_lines()
+{
   return this->size();
 }
 
 } // namespace graphee
 
-#endif // GRAPHEE_VECTOR_H__
+#endif // GRAPHEE_VECTOR_HPP__

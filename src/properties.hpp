@@ -1,5 +1,5 @@
-#ifndef GPE_PROPS_H__
-#define GPE_PROPS_H__
+#ifndef GPE_PROPERTIES_HPP__
+#define GPE_PROPERTIES_HPP__
 
 #include <iostream>
 #include <string>
@@ -7,20 +7,18 @@
 namespace graphee
 {
 
-class properties
+class Properties
 {
 public:
-  properties() : name(""), nvertices(0), nslices(0), nthreads(0), ram_limit(0), sort_limit(0),
-                 nblocks(0), window(0) {}
+  Properties() : name(""), nvertices(0), nslices(0), nthreads(0), ram_limit(0), sort_limit(0),
+    nblocks(0), window(0) {}
 
-  properties(std::string name, uint64_t nvertices, uint64_t nslices, uint64_t nthreads,
+  Properties(std::string name, uint64_t nvertices, uint64_t nslices, uint64_t nthreads,
              size_t ram_limit, size_t sort_limit) : name(name), nvertices(nvertices * 1000000), nslices(nslices), nthreads(nthreads),
-                                                    ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices * nslices),
-                                                    window(nvertices * 1000000 / nslices)
-  {
-  }
+    ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices * nslices),
+    window(nvertices * 1000000 / nslices) {}
 
-  ~properties() {}
+  ~Properties() {}
 
   static const size_t B{1};
   static const size_t KB{1UL << 10};
@@ -35,8 +33,8 @@ public:
   const size_t sort_limit;
   const uint64_t nblocks;
   const uint64_t window;
-};
+}; // class graphee::Properties
 
 } // namespace graphee
 
-#endif // GPE_PROPS_H__
+#endif // GPE_PROPERTIES_HPP__

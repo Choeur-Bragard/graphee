@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_DISK_SPARSE_MATRIX_H__
-#define GRAPHEE_DISK_SPARSE_MATRIX_H__
+#ifndef GRAPHEE_DISK_SPARSE_MATRIX_HPP__
+#define GRAPHEE_DISK_SPARSE_MATRIX_HPP__
 
 #include <iostream>
 #include <fstream>
@@ -38,30 +38,27 @@
 namespace graphee
 {
 
-template <typename matrixT>
-class diskSparseMatrix
+template <typename MatrixT>
+class DiskSparseMatrix
 {
 public:
-  using matrixType = matrixT;
+  using MatrixType = MatrixT;
 
-  template <typename vectorT>
-  friend class vector;
-
-  diskSparseMatrix(properties *properties) : props(properties) {}
-  diskSparseMatrix(properties *properties, std::string matrix_name) : props(properties), name(matrix_name),
+  DiskSparseMatrix(Properties *properties) : props(properties) {}
+  DiskSparseMatrix(Properties *properties, std::string matrix_name) : props(properties), name(matrix_name),
     m(properties->nvertices), n(properties->nvertices)
   {
     tmpfp = std::vector<std::fstream>(props->nblocks);
   }
 
-  ~diskSparseMatrix()
+  ~DiskSparseMatrix()
   {
     close_files();
   }
 
-  void load_edgelist(const std::vector<std::string> &filenames, int ftype = utils::GZ, int options = utils::TRANS);
+  void load_edgelist(const std::vector<std::string> &filenames, int ftype = Utils::GZ, int options = Utils::TRANS);
 
-  matrixT &get_block(uint64_t line, uint64_t col);
+  MatrixT &get_block(uint64_t line, uint64_t col);
 
   bool empty() const;
 
@@ -69,13 +66,13 @@ public:
   const uint64_t n;
 
 private:
-  properties *props;
+  Properties *props;
 
   std::vector<std::fstream> tmpfp;
 
   std::string name;
 
-  void read_and_split_list(const std::vector<std::string> &filenames, int ftype = utils::GZ);
+  void read_and_split_list(const std::vector<std::string> &filenames, int ftype = Utils::GZ);
 
   static void sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
                                  std::fstream &fp, std::mutex &mtx, uint64_t bid);
@@ -84,7 +81,7 @@ private:
                       std::mutex &read_mtx);
 
   void diskblock_manager();
-  static void diskblock_builder(diskSparseMatrix<matrixT> *dmat, uint64_t line, uint64_t col,
+  static void diskblock_builder(DiskSparseMatrix<MatrixT> *dmat, uint64_t line, uint64_t col,
                                 std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx, std::condition_variable &cond);
 
   std::string get_block_filename(uint64_t line, uint64_t col);
@@ -93,28 +90,28 @@ private:
   void close_files();
 };
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::load_edgelist(const std::vector<std::string> &filenames, int ftype, int options)
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::load_edgelist(const std::vector<std::string> &filenames, int ftype, int options)
 {
   read_and_split_list(filenames, ftype);
   diskblock_manager();
 }
 
-template <typename matrixT>
-matrixT &diskSparseMatrix<matrixT>::get_block(uint64_t line, uint64_t col)
+template <typename MatrixT>
+MatrixT &DiskSparseMatrix<MatrixT>::get_block(uint64_t line, uint64_t col)
 {
   std::ostringstream oss;
   oss << "Start to load disk block [" << line << ":" << col << "]";
   print_log(oss.str());
 
-  matrixT& mat = *new matrixT(props);
+  MatrixT& mat = *new MatrixT(props);
   mat.load(get_block_filename(line, col));
 
   return mat;
 }
 
-template <typename matrixT>
-bool diskSparseMatrix<matrixT>::empty() const
+template <typename MatrixT>
+bool DiskSparseMatrix<MatrixT>::empty() const
 {
   return (props->nvertices == 0);
 }
@@ -125,8 +122,8 @@ bool diskSparseMatrix<matrixT>::empty() const
  *  It splits the edgelist into blocks in order to make
  *  the D/CSR building faster
  */
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::read_and_split_list(const std::vector<std::string> &filenames, int ftype)
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::read_and_split_list(const std::vector<std::string> &filenames, int ftype)
 {
   if (2 * props->sort_limit * props->nblocks > props->ram_limit)
   {
@@ -255,8 +252,8 @@ void diskSparseMatrix<matrixT>::read_and_split_list(const std::vector<std::strin
   close_files();
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::load_GZ(const std::string filename, std::stringstream &ss, std::mutex &read_mtx)
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::load_GZ(const std::string filename, std::stringstream &ss, std::mutex &read_mtx)
 {
   igzstream gz_ifp(filename.data());
 
@@ -282,8 +279,8 @@ void diskSparseMatrix<matrixT>::load_GZ(const std::string filename, std::strings
   }
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
     std::fstream &ofp, std::mutex &mtx, uint64_t bid)
 {
   if (nelems % 2 != 0)
@@ -308,8 +305,8 @@ void diskSparseMatrix<matrixT>::sort_and_save_list(std::vector<uint64_t> &block,
   delete[] edgeptrs;
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::diskblock_manager()
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::diskblock_manager()
 {
   std::vector<std::thread> diskblock_threads;
 
@@ -341,11 +338,11 @@ void diskSparseMatrix<matrixT>::diskblock_manager()
   close_files();
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dmat, uint64_t line, uint64_t col,
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dmat, uint64_t line, uint64_t col,
     std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx, std::condition_variable &cond)
 {
-  properties *props = dmat->props;
+  Properties *props = dmat->props;
 
   tmpfp.seekg(0, tmpfp.end);
   size_t filelen = tmpfp.tellg();
@@ -355,7 +352,7 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
   uint64_t nsections = filelen / props->sort_limit + (filelen % props->sort_limit == 0 ? 0 : 1);
 
   size_t alloc_needs =
-  {(props->window + 1 + nnz) * sizeof(uint64_t) + nnz * sizeof(typename matrixT::valueType)};
+  {(props->window + 1 + nnz) * sizeof(uint64_t) + nnz * sizeof(typename MatrixT::ValueType)};
 
   if (alloc_needs > props->ram_limit)
   {
@@ -386,7 +383,7 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
   alloc_mem += alloc_needs;
   mlock.unlock();
 
-  matrixT mat(props, props->window, props->window, nnz);
+  MatrixT mat(props, props->window, props->window, nnz);
 
   std::vector<uint64_t> offsets(nsections);
   for (uint64_t i = 0; i < nsections; i++)
@@ -447,7 +444,7 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
   {
     mtx.lock();
     std::ostringstream err;
-    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' failed !";
+    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_typename << "\' failed !";
     print_error(err.str());
     mtx.unlock();
     return;
@@ -456,12 +453,12 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
   {
     mtx.lock();
     std::ostringstream log;
-    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' succeed !";
+    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_typename << "\' succeed !";
     print_log(log.str());
     mtx.unlock();
   }
 
-  mat.save(dmat->get_block_filename(line, col), utils::SNAPPY);
+  mat.save(dmat->get_block_filename(line, col), Utils::SNAPPY);
 
   mtx.lock();
   alloc_mem -= alloc_needs;
@@ -471,11 +468,11 @@ void diskSparseMatrix<matrixT>::diskblock_builder(diskSparseMatrix<matrixT> *dma
 }
 
 template <>
-void diskSparseMatrix<sparseBMatrixCSR>::diskblock_builder(diskSparseMatrix<sparseBMatrixCSR> *dmat,
- uint64_t line, uint64_t col, std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx,
- std::condition_variable &cond)
+void DiskSparseMatrix<SparseBMatrixCSR>::diskblock_builder(DiskSparseMatrix<SparseBMatrixCSR> *dmat,
+    uint64_t line, uint64_t col, std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx,
+    std::condition_variable &cond)
 {
-  properties *props = dmat->props;
+  Properties *props = dmat->props;
 
   tmpfp.seekg(0, tmpfp.end);
   size_t filelen = tmpfp.tellg();
@@ -515,7 +512,7 @@ void diskSparseMatrix<sparseBMatrixCSR>::diskblock_builder(diskSparseMatrix<spar
   alloc_mem += alloc_needs;
   mlock.unlock();
 
-  sparseBMatrixCSR mat(props, props->window, props->window, nnz);
+  SparseBMatrixCSR mat(props, props->window, props->window, nnz);
 
   std::vector<uint64_t> offsets(nsections);
   for (uint64_t i = 0; i < nsections; i++)
@@ -573,7 +570,7 @@ void diskSparseMatrix<sparseBMatrixCSR>::diskblock_builder(diskSparseMatrix<spar
   {
     mtx.lock();
     std::ostringstream err;
-    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' failed !";
+    err << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_typename << "\' failed !";
     print_error(err.str());
     mtx.unlock();
     return;
@@ -582,12 +579,12 @@ void diskSparseMatrix<sparseBMatrixCSR>::diskblock_builder(diskSparseMatrix<spar
   {
     mtx.lock();
     std::ostringstream log;
-    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrixType << "\' succeed !";
+    log << "Block [" << line << ";" << col << "] conversion to \'" << mat.matrix_typename << "\' succeed !";
     print_log(log.str());
     mtx.unlock();
   }
 
-  mat.save(dmat->get_block_filename(line, col), utils::SNAPPY);
+  mat.save(dmat->get_block_filename(line, col), Utils::SNAPPY);
 
   mtx.lock();
   alloc_mem -= alloc_needs;
@@ -596,16 +593,16 @@ void diskSparseMatrix<sparseBMatrixCSR>::diskblock_builder(diskSparseMatrix<spar
   cond.notify_one();
 }
 
-template <typename matrixT>
-std::string diskSparseMatrix<matrixT>::get_block_filename(uint64_t line, uint64_t col)
+template <typename MatrixT>
+std::string DiskSparseMatrix<MatrixT>::get_block_filename(uint64_t line, uint64_t col)
 {
   std::ostringstream matrixname;
   matrixname << props->name << "_" << name << "_dmatblk_" << line << "_" << col << ".gpe";
   return matrixname.str();
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::open_files(std::ios_base::openmode mode)
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::open_files(std::ios_base::openmode mode)
 {
   std::ostringstream blockname;
 
@@ -629,8 +626,8 @@ void diskSparseMatrix<matrixT>::open_files(std::ios_base::openmode mode)
   }
 }
 
-template <typename matrixT>
-void diskSparseMatrix<matrixT>::close_files()
+template <typename MatrixT>
+void DiskSparseMatrix<MatrixT>::close_files()
 {
   for (auto &fp : tmpfp)
   {

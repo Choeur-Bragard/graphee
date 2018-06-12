@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_SPARSE_MATRIX_CSR_H__
-#define GRAPHEE_SPARSE_MATRIX_CSR_H__
+#ifndef GRAPHEE_SPARSE_MATRIX_CSR_HPP__
+#define GRAPHEE_SPARSE_MATRIX_CSR_HPP__
 
 #include <iostream>
 #include <fstream>
@@ -21,34 +21,34 @@ namespace graphee
 /*! \brief Sparse matrix in CSR format
  *         Commonly named Compressed Sparse Row
  *
- * The matrix can handle either `double`, `float` and `int` 
+ * The matrix can handle either `double`, `float` and `int`
  * values.
  */
 
-template <typename valueT>
-class sparseMatrixCSR : public sparseBMatrixCSR
+template <typename ValueT>
+class SparseMatrixCSR : public SparseBMatrixCSR
 {
 public:
-  sparseMatrixCSR(properties *properties) : sparseBMatrixCSR(properties)
+  SparseMatrixCSR(Properties *properties) : SparseBMatrixCSR(properties)
   {
-    if (typeid(valueT) == typeid(bool))
+    if (typeid(ValueT) == typeid(bool))
     {
-      print_error ("Do not use \'sparseMatrixCSR<bool>\', instead use \'sparseBMatrixCSR\'");
+      print_error ("Do not use \'SparseMatrixCSR<bool>\', instead use \'SparseBMatrixCSR\'");
       exit(-1);
     }
   }
 
-  sparseMatrixCSR(properties *properties, uint64_t nlines, uint64_t ncols,
-                  uint64_t nonzero_elems, valueT init_val = 0.) :
-                  sparseBMatrixCSR(properties, nlines, ncols, nonzero_elems)
+  SparseMatrixCSR(Properties *properties, uint64_t nlines, uint64_t ncols,
+                  uint64_t nonzero_elems, ValueT init_val = 0.) :
+    SparseBMatrixCSR(properties, nlines, ncols, nonzero_elems)
   {
-    if (typeid(valueT) == typeid(bool))
+    if (typeid(ValueT) == typeid(bool))
     {
-      print_error ("Do not use \'sparseMatrixCSR<bool>\', instead use \'sparseBMatrixCSR\'");
+      print_error ("Do not use \'SparseMatrixCSR<bool>\', instead use \'SparseBMatrixCSR\'");
       exit(-1);
     }
 
-    if ((nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(valueT) < props->ram_limit)
+    if ((nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(ValueT) < props->ram_limit)
     {
       a.resize(nnz, init_val);
     }
@@ -59,17 +59,18 @@ public:
     }
   }
 
-  sparseMatrixCSR(sparseMatrixCSR<valueT> &&mat) : sparseBMatrixCSR(std::move(mat)), a(std::move(mat.a)) {}
+  SparseMatrixCSR(SparseMatrixCSR<ValueT> &&mat) : SparseBMatrixCSR(std::move(mat)), a(std::move(mat.a)) {}
 
-  ~sparseMatrixCSR() {
+  ~SparseMatrixCSR()
+  {
     a.clear();
   }
 
-  void fill(uint64_t i, uint64_t j, valueT val);
-  void insert(uint64_t i, uint64_t j, valueT val);
-  void remove(uint64_t i, uint64_t j, valueT val);
+  void fill(uint64_t i, uint64_t j, ValueT val);
+  void insert(uint64_t i, uint64_t j, ValueT val);
+  void remove(uint64_t i, uint64_t j, ValueT val);
 
-  void save(std::string filename, int file_format = utils::BIN);
+  void save(std::string filename, int file_format = Utils::BIN);
   void load(std::string filename);
 
   size_t size();
@@ -79,49 +80,49 @@ public:
   void clear();
 
   template <typename vecValueT>
-  vector<vecValueT> &operator*(vector<vecValueT> &rvec);
-  sparseMatrixCSR<valueT> &operator*(valueT rval);
+  Vector<vecValueT> &operator*(Vector<vecValueT> &rvec);
+  SparseMatrixCSR<ValueT> &operator*(ValueT rval);
 
-  const std::string matrixType{"sparseMatrixCSR"};
+  const std::string matrix_typename{"SparseMatrixCSR"};
 
-  using valueType = valueT;
+  using ValueType = ValueT;
 
 private:
-  std::vector<valueT> a;
-}; // class sparseMatrixCSR
+  std::vector<ValueT> a;
+}; // class SparseMatrixCSR
 
 /*! Filling the sparse matrix with sorted entries by
  * ascending lines id
  */
-template <typename valueT>
-void sparseMatrixCSR<valueT>::fill(uint64_t i, uint64_t j, valueT val)
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::fill(uint64_t i, uint64_t j, ValueT val)
 {
-  sparseBMatrixCSR::fill(i, j);
+  SparseBMatrixCSR::fill(i, j);
   a[ia[i + 1]] = val;
 }
 
 /*! Inserting element in a CSR matrix */
-template <typename valueT>
-void sparseMatrixCSR<valueT>::insert(uint64_t i, uint64_t j, valueT val)
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::insert(uint64_t i, uint64_t j, ValueT val)
 {
 }
 
 /*! Remove element of the CSR matrix*/
-template <typename valueT>
-void sparseMatrixCSR<valueT>::remove(uint64_t i, uint64_t j, valueT val)
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::remove(uint64_t i, uint64_t j, ValueT val)
 {
 }
 
-template <typename valueT>
-void sparseMatrixCSR<valueT>::save(std::string name, int fileformat)
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::save(std::string name, int fileformat)
 {
   std::ofstream matfp(name, std::ios_base::binary);
 
-  size_t matrixType_size = matrixType.size();
+  size_t matrix_typename_size = matrix_typename.size();
 
   /* Save explicitly matrix properties */
-  matfp.write(reinterpret_cast<const char *>(&matrixType_size), sizeof(size_t));
-  matfp.write(reinterpret_cast<const char *>(matrixType.c_str()), matrixType_size);
+  matfp.write(reinterpret_cast<const char *>(&matrix_typename_size), sizeof(size_t));
+  matfp.write(reinterpret_cast<const char *>(matrix_typename.c_str()), matrix_typename_size);
 
   /* Save fileformat {BIN, SNAPPY} */
   matfp.write(reinterpret_cast<const char *>(&fileformat), sizeof(int));
@@ -130,17 +131,17 @@ void sparseMatrixCSR<valueT>::save(std::string name, int fileformat)
   matfp.write(reinterpret_cast<const char *>(&m), sizeof(uint64_t));
   matfp.write(reinterpret_cast<const char *>(&nnz), sizeof(uint64_t));
 
-  if (fileformat == utils::BIN)
+  if (fileformat == Utils::BIN)
   {
-    matfp.write(reinterpret_cast<const char *>(a.data()), a.size() * sizeof(valueT));
+    matfp.write(reinterpret_cast<const char *>(a.data()), a.size() * sizeof(ValueT));
     matfp.write(reinterpret_cast<const char *>(ia.data()), ia.size() * sizeof(uint64_t));
     matfp.write(reinterpret_cast<const char *>(ja.data()), ja.size() * sizeof(uint64_t));
   }
-  else if (fileformat == utils::SNAPPY)
+  else if (fileformat == Utils::SNAPPY)
   {
-    size_t a_snappy_size = snappy::MaxCompressedLength64(a.size() * sizeof(valueT));
+    size_t a_snappy_size = snappy::MaxCompressedLength64(a.size() * sizeof(ValueT));
     char *a_snappy = new char[a_snappy_size];
-    snappy::RawCompress64(reinterpret_cast<char *>(a.data()), a.size() * sizeof(valueT), a_snappy, &a_snappy_size);
+    snappy::RawCompress64(reinterpret_cast<char *>(a.data()), a.size() * sizeof(ValueT), a_snappy, &a_snappy_size);
 
     matfp.write(reinterpret_cast<const char *>(&a_snappy_size), sizeof(size_t));
     matfp.write(reinterpret_cast<const char *>(a_snappy), a_snappy_size);
@@ -166,25 +167,25 @@ void sparseMatrixCSR<valueT>::save(std::string name, int fileformat)
   matfp.close();
 }
 
-template <typename valueT>
-void sparseMatrixCSR<valueT>::load(std::string name)
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::load(std::string name)
 {
   this->clear();
   std::ifstream matfp(name, std::ios_base::binary);
 
   /* Save explicitly matrix properties */
-  size_t matrixType_size;
-  matfp.read(reinterpret_cast<char *>(&matrixType_size), sizeof(size_t));
+  size_t matrix_typename_size;
+  matfp.read(reinterpret_cast<char *>(&matrix_typename_size), sizeof(size_t));
 
-  char read_matrixType[matrixType_size + 1];
-  matfp.read(reinterpret_cast<char *>(read_matrixType), matrixType_size);
-  read_matrixType[matrixType_size] = '\0';
+  char read_matrix_typename[matrix_typename_size + 1];
+  matfp.read(reinterpret_cast<char *>(read_matrix_typename), matrix_typename_size);
+  read_matrix_typename[matrix_typename_size] = '\0';
 
-  if (std::strcmp(read_matrixType, matrixType.c_str()) != 0)
+  if (std::strcmp(read_matrix_typename, matrix_typename.c_str()) != 0)
   {
     std::ostringstream oss;
-    oss << "Wrong matrix format, found \'" << read_matrixType << "\' while expecting \'"
-        << matrixType << "\'";
+    oss << "Wrong matrix format, found \'" << read_matrix_typename << "\' while expecting \'"
+        << matrix_typename << "\'";
     print_error(oss.str());
     exit(-1);
   }
@@ -197,7 +198,7 @@ void sparseMatrixCSR<valueT>::load(std::string name)
   matfp.read(reinterpret_cast<char *>(&m), sizeof(uint64_t));
   matfp.read(reinterpret_cast<char *>(&nnz), sizeof(uint64_t));
 
-  if ((nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(valueT) < props->ram_limit)
+  if ((nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(ValueT) < props->ram_limit)
   {
     a.resize(nnz, 0.);
     ia.resize(m + 1, 0);
@@ -210,13 +211,13 @@ void sparseMatrixCSR<valueT>::load(std::string name)
     exit(-1);
   }
 
-  if (fileformat == utils::BIN)
+  if (fileformat == Utils::BIN)
   {
-    matfp.read(reinterpret_cast<char *>(a.data()), a.size() * sizeof(valueT));
+    matfp.read(reinterpret_cast<char *>(a.data()), a.size() * sizeof(ValueT));
     matfp.read(reinterpret_cast<char *>(ia.data()), ia.size() * sizeof(uint64_t));
     matfp.read(reinterpret_cast<char *>(ja.data()), ja.size() * sizeof(uint64_t));
   }
-  else if (fileformat == utils::SNAPPY)
+  else if (fileformat == Utils::SNAPPY)
   {
     bool uncomp_succeed;
 
@@ -277,23 +278,23 @@ void sparseMatrixCSR<valueT>::load(std::string name)
   matfp.close();
 }
 
-template <typename valueT>
-size_t sparseMatrixCSR<valueT>::size()
+template <typename ValueT>
+size_t SparseMatrixCSR<ValueT>::size()
 {
-  return (nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(valueT);
+  return (nnz + m + 1) * sizeof(uint64_t) + nnz * sizeof(ValueT);
 }
 
 
-template <typename valueT>
-void sparseMatrixCSR<valueT>::clear()
+template <typename ValueT>
+void SparseMatrixCSR<ValueT>::clear()
 {
-  sparseBMatrixCSR::clear();
+  SparseBMatrixCSR::clear();
   a.clear();
 }
 
-template <typename valueT>
+template <typename ValueT>
 template <typename vecValueT>
-vector<vecValueT> &sparseMatrixCSR<valueT>::operator*(vector<vecValueT> &rvec)
+Vector<vecValueT> &SparseMatrixCSR<ValueT>::operator*(Vector<vecValueT> &rvec)
 {
   if (n != rvec.get_lines())
   {
@@ -303,7 +304,7 @@ vector<vecValueT> &sparseMatrixCSR<valueT>::operator*(vector<vecValueT> &rvec)
     exit(-1);
   }
 
-  vector<vecValueT> res(rvec.get_properties(), m, 0.);
+  Vector<vecValueT> res(rvec.get_properties(), m, 0.);
 
   for (uint64_t i = 0; i < m; i++)
   {
@@ -314,8 +315,8 @@ vector<vecValueT> &sparseMatrixCSR<valueT>::operator*(vector<vecValueT> &rvec)
   }
 }
 
-template <typename valueT>
-sparseMatrixCSR<valueT> &sparseMatrixCSR<valueT>::operator*(valueT rval)
+template <typename ValueT>
+SparseMatrixCSR<ValueT> &SparseMatrixCSR<ValueT>::operator*(ValueT rval)
 {
   for (uint64_t i = 0; i < nnz; i++)
     a[i] *= rval;
@@ -325,4 +326,4 @@ sparseMatrixCSR<valueT> &sparseMatrixCSR<valueT>::operator*(valueT rval)
 
 } // namespace graphee
 
-#endif // GRAPHEE_SPARSE_MATRIX_CSR_H__
+#endif // GRAPHEE_SPARSE_MATRIX_CSR_HPP__

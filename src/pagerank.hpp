@@ -1,5 +1,5 @@
-#ifndef GRAPHEE_PAGERANK_H__
-#define GRAPHEE_PAGERANK_H__
+#ifndef GRAPHEE_PAGERANK_HPP__
+#define GRAPHEE_PAGERANK_HPP__
 
 #include <iostream>
 #include <fstream>
@@ -13,25 +13,25 @@
 namespace graphee
 {
 
-template <typename diskSpMatT>
-class pagerank
+template <typename DiskSparseMatrixT>
+class Pagerank
 {
 public:
-  pagerank (properties& properties, diskSpMatT& adjency_matrix) : props(properties), adj_mat(adjency_matrix) {}
-
+  Pagerank (properties* properties, DiskSparseMatrixT* adjency_matrix, float damp) :
+    props(properties), adj_mat(adjency_matrix), damp(damp) {}
   void compute_pagerank(uint64_t niter);
 
 private:
-  const float damping {0.85};
-  properties& props;
-  diskSpMatT& adj_mat;
+  const float damp;
+  Properties* props;
+  DiskSparseMatrixT* adj_mat;
 
-  diskVector<vector<float>> pagerank;
-  diskVector<vector<float>> pagerank_itp1;
-  diskVector<vector<float>> out_bounds;
+  DiskVector<Vector<float>> pagerank;
+  DiskVector<Vector<float>> pagerank_itp1;
+  DiskVector<Vector<float>> out_bounds;
 }; // class pagerank
 
-template <typename gpe_dmat_t, typename gpe_dvec_t>
+template <typename , typename gpe_dvec_t>
 void gpePageRank<gpe_dmat_t, gpe_dvec_t>::calc_page_rank(uint64_t niter)
 {
   if (adj_mat.empty())

@@ -6,10 +6,10 @@
 #include "graphee.hpp"
 
 int main (int argc, char** argv) {
-  graphee::properties
+  graphee::Properties
     props (std::string("cc18q1"), 98, 4, 8, 
-    10*graphee::properties::GB, 
-    256*graphee::properties::MB);
+    10*graphee::Properties::GB, 
+    256*graphee::Properties::MB);
 
   std::ifstream filelist(argv[1]);
   std::vector<std::string> filenames;
@@ -21,7 +21,7 @@ int main (int argc, char** argv) {
   filenames.pop_back();
   filelist.close();
 
-  graphee::diskSparseMatrix<graphee::sparseBMatrixCSR> 
+  graphee::DiskSparseMatrix<graphee::SparseBMatrixCSR> 
     adjency_matrix (&props, "adj");
 
   adjency_matrix.load_edgelist(filenames);
