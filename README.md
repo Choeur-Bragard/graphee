@@ -2,8 +2,6 @@
 Graphee is a light-weight code written in C++ to compute graph properties, such as:
 PageRank, TrustRank, harmonic centrality, etc...
 
-**NOTE: For now on, the code contains all the needed tools for the PageRank, but the example will arrive soon. This means in less than a week** :tada:
-
 ## What's the purpose of Graphee?
 In order to improve search engine results, one has compute some values from the graph of the web.
 Actually, some famous works are known like the
@@ -40,7 +38,8 @@ Technically we use `pthread` and `OpenMP` technologies for the parallel calculat
 The full support or `CUDA` standards is one of the major properties to be included soon !
 
 ## Examples & functionalities
-**NOTE: For now on, the code contains all the needed tools for the PageRank, but the example will arrive soon. This means in less than a week** :tada:
+**NOTE: For now on, the code contains all the needed tools for the PageRank.
+But I need to write a small script to DL few test data. I'm on my way...**
 
 ## Contributing
 Please first read `CONRTIBUTING.md` and propose what you want or you can fix or add functionalities detailed
