@@ -27,12 +27,16 @@ namespace graphee
 class sparseBMatrixCSR
 {
 public:
-  sparseBMatrixCSR(properties *properties) : props(properties), m(0), n(0), nnz(0) {}
+  sparseBMatrixCSR(properties *properties) : props(properties), m(0), n(0), nnz(0)
+  {
+    std::cout << "SpBMat empty" << std::endl;
+  }
 
   sparseBMatrixCSR(properties *properties, uint64_t nlines, uint64_t ncols,
-                  uint64_t nonzero_elems) : props(properties), m(nlines),
-                  n(ncols), nnz(nonzero_elems)
+                   uint64_t nonzero_elems) : props(properties), m(nlines),
+    n(ncols), nnz(nonzero_elems)
   {
+    std::cout << "SpBMat full" << std::endl;
     if ((nnz + m + 1) * sizeof(uint64_t) < props->ram_limit)
     {
       ia.resize(m + 1, 0);
@@ -45,7 +49,12 @@ public:
     }
   }
 
-  ~sparseBMatrixCSR() {}
+  ~sparseBMatrixCSR()
+  {
+    std::cout << "SpBMat destructor" << std::endl;
+    ia.clear();
+    ja.clear();
+  }
 
   void fill(uint64_t i, uint64_t j);
   void insert(uint64_t i, uint64_t j);
@@ -306,15 +315,18 @@ vector<vecValueT> &sparseBMatrixCSR::operator*(vector<vecValueT> &rvec)
   return res;
 }
 
-uint64_t sparseBMatrixCSR::get_lines() {
+uint64_t sparseBMatrixCSR::get_lines()
+{
   return m;
 }
 
-uint64_t sparseBMatrixCSR::get_columns() {
+uint64_t sparseBMatrixCSR::get_columns()
+{
   return n;
 }
 
-uint64_t sparseBMatrixCSR::get_nonzeros() {
+uint64_t sparseBMatrixCSR::get_nonzeros()
+{
   return nnz;
 }
 

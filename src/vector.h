@@ -27,12 +27,21 @@ class vector : public std::vector<valueT>
 {
 public:
   vector(properties *properties) :
-    std::vector<valueT>(), props(properties) {}
+    std::vector<valueT>(), props(properties)
+  {
+    std::cout << "Vector empty" << std::endl;
+  }
 
   vector(properties *properties, size_t m, valueT init_value = 0) :
-    std::vector<valueT>(m, init_value), props(properties) {}
+    std::vector<valueT>(m, init_value), props(properties)
+  {
+    std::cout << "Vector full" << std::endl;
+  }
 
-  ~vector() {}
+  ~vector()
+  {
+    std::cout << "Vector delete" << std::endl;
+  }
 
   void save(std::string name, int fileformat = utils::BIN);
   void load(std::string name);

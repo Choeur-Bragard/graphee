@@ -58,7 +58,9 @@ public:
     }
   }
 
-  ~sparseMatrixCSR() {}
+  ~sparseMatrixCSR() {
+    a.clear();
+  }
 
   void fill(uint64_t i, uint64_t j, valueT val);
   void insert(uint64_t i, uint64_t j, valueT val);
