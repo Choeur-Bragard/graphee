@@ -14,7 +14,7 @@ int main (int argc, char** argv) {
     256*graphee::Properties::MB);
 
   graphee::DiskSparseMatrix<graphee::SparseBMatrixCSR> 
-    adjency_matrix (&props, "adj");
+    adjacency_matrix (&props, "adj");
 
   float init_val = 1./((float) props.nvertices);
   graphee::DiskVector<graphee::Vector<float>>
@@ -23,7 +23,7 @@ int main (int argc, char** argv) {
   graphee::DiskVector<graphee::Vector<float>>
     pagerank_itp1 (&props, "prp1", 0.);
 
-  pagerank_itp1.add_xmatvec_prod (1., adjency_matrix, pagerank);
+  pagerank_itp1.add_xmatvec_prod (1., adjacncy_matrix, pagerank);
 
   pagerank_itp1.swap(pagerank);
 

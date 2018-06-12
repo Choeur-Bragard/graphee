@@ -1,16 +1,7 @@
 # To-Do list
-- [x] :warning: Rename and simplify arch for the 1st release
-- [ ] :zap: Write a complete pagerank example
-- [ ] :zap: Write a complete `README`
-- [ ] :zap: Develop a fixed `gpe_props.window` logic
-- [ ] Make a `edgelist_converter` independent of the file size
-- [x] Add a `swap` function to `gpe_diskvec`
-- [x] Write the `mat_vec_prod` for `(disk)mat/vec`
-- [x] Include both PageRank and ~~CUDA PageRank~~
-- [x] Verify the implementation of `gpe_diskmat`
-- [x] Implement DCSR sparse matrix format
-- [ ] :zap: Add to DCSR format `insert` and `remove` members
-- [x] Writing the class `gpe_diskvec` and `gpe_vec`
-- [x] Think to a slighter template format, for both `gpe_diskvec` and `gpe_diskmat`
-- [ ] Implement mesh refinement for `gpe_diskmat`
-- [x] Time stamp in logs
+
+- [ ] :zap: Hurry up, write an elegant `PageRank` class !
+- [ ] Write `insert`, `remove` and `defrag`,  of the `DCSR` format
+- [ ] Independent edge-list converter, which manages wide files.
+- [ ] Implement mesh-refinement for `DiskSparseMatrix`.
+- [ ] Version with a fixed `window` for dynamic graphs

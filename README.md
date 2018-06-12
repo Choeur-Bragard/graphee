@@ -1,19 +1,58 @@
 # Graphee :chart_with_upwards_trend:
-Graphee is a light-weight code written in C++ to compute graphs properties.
+Graphee is a light-weight code written in C++ to compute graphs properties, such as:
+PageRank, TrustRank, harmonic centrality, etc...
 
-## What to do?
-The graph study is essential within the web science. Actually, the output of search engine could be clearly improved by a good knowledge of its structure. Two of the flagship studies are the PageRank and the TrustRank. 
-Nowadays the extraction of some metrics from the graph of the web is essential. However, the available frameworks are either limited by `int32` and about 4.2B vertices (GraphChi and m-flash), or requires a huge amount of RAM and have to be launched over a Hadoop cluster.
+**NOTE: For now on, the code contains only guidelines. The full PageRank may arrive soon,
+this means less than a week** :tada:
 
-We propose to extend the fields open by GraphChi and m-flash in order to make a more powerful tool for graph studies. We propose to use compressed sparse row (CSR) format to save the graph, and implement the Dynamic CSR (DCSR) which allows the update of the graph. Nowadays, some snapshots of the web contains more than 180B edges. In such cases, one cannot restart a graph calculation from scratch. The solution is to treat delta between two version.
+## What's the purpose of Graphee?
+In order to improve search engine results, one has compute some values from the graph of the web.
+Actually, some famous works are known like the
+[*PageRank*](http://infolab.stanford.edu/pub/papers/google.pdf) or the 
+[*TrustRank*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf) algorithms. They were
+booth indispensable to make their search engine pertinent and spam proof.
 
-## Technologies
-For the moment we restrict ourselves on `POSIX Threads` and `OpenMP` for the parallelization stuff. However, we are preparing a full `CUDA` compatible framework.
+However, with time the graph of the web has became wider and wider. It clearly contains more than a
+dozen of billion vertices and at least ten times more edges. Some, has chosen to persist in full-RAM
+computations and using distributed framework as *Hadoop* or *Spark*. While, some other approaches as 
+[*GraphChi*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf) or
+[*m-flash*](https://www.cc.gatech.edu/~dchau/papers/16-pkdd-mflash.pdf) are using serialization methods, 
+but both limited by `uint32_t` for the vertex ids.
 
-## Examples
-The basic example concerns the calculations of a PageRank of a 98M vertices graph (from Common Crawl).
+### Graphee's innovations
+Thus, we propose to develop software able to handle `uint64` and still performing calculations
+on a single laptop (sometimes with an external hard-drive for wide graphs).
 
-## Joining us?
-Please before read `CONTRIBUTING.md` and if you don't know what to do the `TODO.md`. Then propose some pull-request !
+The graph is converted into an adjacency matrix and then saved with the fully-tested (since 70's)
+[Compressed Sparse Row (CSR) matrix format](https://en.wikipedia.org/wiki/Sparse_matrix#Compressed_sparse_row_(CSR,_CRS_or_Yale_format)).
+The serialization is done by dividing vectors into slices, and matrices into blocks, with sizes
+not exceeding the RAM-limit of the computer.
+
+However, nowadays the graph of the web is so wide that one cannot restart calculations from scratch.
+The preferred solution would be using delta files, saving only differences between two graph
+snapshots. But the CSR format is unfriendly with insertions and deletions. So we propose
+to implement the [*Dynamic CSR*](https://thomas.gilray.org/pdf/dynamic-csr.pdf) matrix format,
+which presents high speedups for the matrix modifications.
+
+Also a binding of Graphee with `Python` is under development !
+
+## Efficiency
+Technically we use `pthread` and `OpenMP` technologies for the parallel calculations on CPUs.
+The full support or `CUDA` standards is one of the major properties to be included soon !
+
+## Examples & functionalities
+**NOTE: For now on, the code contains only guidelines. The full PageRank example may arrive soon, 
+this means less than a week** :tada:
+
+## Contributing
+Please first read `CONRTIBUTING.md` and propose what you want or you can fix or add functionalities detailed
+within `TODO.md`.
+
+For any questions, comments, or collaborations, please use: *n.martin [at] qwantresearch [dot] com*.
 
 ## References
+- [The Anatomy of a Large-Scale Hypertextual Web Search Engine, *S. Brin and L. Page*](http://infolab.stanford.edu/pub/papers/google.pdf)
+- [Web Spam Detection with Anti-Trust Rank, *V. Krishnan and R. Raj*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf)
+- [GraphChi: Large-Scale Graph Computation on Just a PC, *A. Kyrola, G. Blelloch, and C. Guestrin*](http://i.stanford.edu/~kvijay/krishnan-raj-airweb06.pdf)
+- [M-Flash: Fast Billion-Scale Graph Computation Using a Bimodal Block Processing Model, *H. Gualdron* et al.](https://www.cc.gatech.edu/~dchau/papers/16-pkdd-mflash.pdf)
+- [Dynamic Sparse-Matrix Allocation on GPUs, *J. King, T. Gilray, R.M. Kirby and M. Might*](https://thomas.gilray.org/pdf/dynamic-csr.pdf)

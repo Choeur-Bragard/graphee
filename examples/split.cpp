@@ -22,7 +22,7 @@ int main (int argc, char** argv) {
   filelist.close();
 
   graphee::DiskSparseMatrix<graphee::SparseBMatrixCSR> 
-    adjency_matrix (&props, "adj");
+    adjacency_matrix (&props, "adj");
 
-  adjency_matrix.load_edgelist(filenames);
+  adjacency_matrix.load_edgelist(filenames);
 }
