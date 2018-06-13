@@ -42,10 +42,10 @@ The full support or `CUDA` standards is one of the major properties to be includ
 But I need to write a small script to DL few test data. I'm on my way...**
 
 ## Contributing
-Please first read `CONTRIBUTING.md` and propose what you want or you can fix or add functionalities detailed
-within `TODO.md`.
+Please first read [`CONTRIBUTING.md`](CONTRIBUTING.md) and propose what you want or you can fix or add functionalities detailed
+within [`TODO.md`](TODO.md).
 
-For any questions, comments, or collaborations, please use: *n.martin [at] qwantresearch [dot] com*.
+For any questions, comments, or collaborations, please use: **n.martin [at] qwantresearch [dot] com**.
 
 ## References
 1. [The Anatomy of a Large-Scale Hypertextual Web Search Engine, *S. Brin and L. Page*](http://infolab.stanford.edu/pub/papers/google.pdf)
