@@ -26,7 +26,7 @@ public:
   Edgelist (Properties *properties, std::mutex *mutex,
             const size_t buf_size, std::vector<std::string> &filelist) :
     props(properties), mtx(mutex), buf_size(buf_size), part_id(0),
-    buf_filed(true), filelist(std::move(filelist)), file_ptr(nullptr)
+    is_data(false), filelist(std::move(filelist)), file_ptr(nullptr)
   {
     buf = new char[buf_size];
   }
@@ -45,7 +45,7 @@ private:
   size_t part_id;
   char* buf;
   const size_t buf_size;
-  bool buf_filed;
+  bool is_data;
 
   gzFile file_ptr;
 

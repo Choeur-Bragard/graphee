@@ -162,7 +162,6 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &fi
 
     while (!out_stream.eof())
     {
-      /* (*ssp_read) >> fromID >> toID; */
       out_stream >> to_id >> from_id;
       if (to_id == from_id)
         continue; // oriented graph !
