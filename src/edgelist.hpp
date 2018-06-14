@@ -24,11 +24,16 @@ class Edgelist
 {
 public:
   Edgelist (Properties *properties, std::mutex *mutex,
-            size_t sstream_limit, std::vector<std::string> &filelist) :
-    props(properties), mtx(mutex), sstream_limit(sstream_limit),
-    filelist(std::move(filelist)), file_ptr(nullptr) {}
+            const size_t buf_size, std::vector<std::string> &filelist) :
+    props(properties), mtx(mutex), buf_size(buf_size), part_id(0),
+    buf_filed(true), filelist(std::move(filelist)), file_ptr(nullptr)
+  {
+    buf = new char[buf_size];
+  }
 
-  bool read_file(std::stringstream& sstream_read);
+  bool read(std::stringstream& sstream_read);
+
+  std::string get_filename();
 
 private:
   Properties *props;
@@ -37,9 +42,12 @@ private:
   std::vector<std::string> filelist;
   std::vector<std::string>::iterator filelist_it;
 
-  const size_t sstream_limit;
+  size_t part_id;
+  char* buf;
+  const size_t buf_size;
+  bool buf_filed;
 
-  FILE* file_ptr;
+  gzFile file_ptr;
 
   static void deflate_chunk(Edgelist* edgelist, std::stringstream &sstream_read);
 }; // class Edgelist

@@ -12,12 +12,12 @@
 #include <condition_variable>
 #include <algorithm>
 
-#include <gzstream.h>
 #include "snappy/snappy.h"
 
 #include "utils.hpp"
 #include "properties.hpp"
 #include "vector.hpp"
+#include "edgelist.hpp"
 
 #define SORT_NAME gpe
 #define SORT_TYPE uint64_t *
@@ -56,7 +56,7 @@ public:
     close_files();
   }
 
-  void load_edgelist(const std::vector<std::string> &filenames, int ftype = Utils::GZ, int options = Utils::TRANS);
+  void load_edgelist(std::vector<std::string> &filenames, int ftype = Utils::GZ, int options = Utils::TRANS);
 
   MatrixT &get_block(uint64_t line, uint64_t col);
 
@@ -72,13 +72,10 @@ private:
 
   std::string name;
 
-  void read_and_split_list(const std::vector<std::string> &filenames, int ftype = Utils::GZ);
+  void read_and_split_list(std::vector<std::string> &filenames, int ftype = Utils::GZ);
 
   static void sort_and_save_list(std::vector<uint64_t> &block, uint64_t nelems,
                                  std::fstream &fp, std::mutex &mtx, uint64_t bid);
-
-  static void load_GZ(const std::string filename, std::stringstream &ss,
-                      std::mutex &read_mtx);
 
   void diskblock_manager();
   static void diskblock_builder(DiskSparseMatrix<MatrixT> *dmat, uint64_t line, uint64_t col,
@@ -91,7 +88,7 @@ private:
 };
 
 template <typename MatrixT>
-void DiskSparseMatrix<MatrixT>::load_edgelist(const std::vector<std::string> &filenames, int ftype, int options)
+void DiskSparseMatrix<MatrixT>::load_edgelist(std::vector<std::string> &filenames, int ftype, int options)
 {
   read_and_split_list(filenames, ftype);
   diskblock_manager();
@@ -123,7 +120,7 @@ bool DiskSparseMatrix<MatrixT>::empty() const
  *  the D/CSR building faster
  */
 template <typename MatrixT>
-void DiskSparseMatrix<MatrixT>::read_and_split_list(const std::vector<std::string> &filenames, int ftype)
+void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &filenames, int ftype)
 {
   if (2 * props->sort_limit * props->nblocks > props->ram_limit)
   {
@@ -149,16 +146,19 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(const std::vector<std::strin
 
   uint64_t nsec = 0;
 
-  load_GZ(filenames[0], in_stream, read_mtx);
+  const size_t buf_size {1UL << 29}; // 512 MB
+  Edgelist edglst(props, &read_mtx, buf_size, filenames);
 
-  for (uint64_t i = 1; i < filenames.size(); i++)
+  edglst.read(in_stream);
+
+  while (true)
   {
     read_mtx.lock();
     std::swap(in_stream, out_stream);
     read_mtx.unlock();
 
-    std::thread gz_reader_thread(load_GZ, filenames[i], std::ref(in_stream), std::ref(read_mtx));
-    gz_reader_thread.detach();
+    if (!edglst.read(in_stream))
+      break;
 
     while (!out_stream.eof())
     {
@@ -191,47 +191,9 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(const std::vector<std::strin
     }
 
     std::ostringstream oss;
-    oss << "Sorted file " << filenames[i - 1];
+    oss << "Sorted a part of file \'" << edglst.get_filename() << "\'";
     print_strong_log(oss.str());
   }
-
-  read_mtx.lock();
-  std::swap(in_stream, out_stream);
-  read_mtx.unlock();
-
-  while (!out_stream.eof())
-  {
-    /* (*ssp_read) >> fromID >> toID; */
-    out_stream >> to_id >> from_id;
-    if (to_id == from_id)
-      continue; // oriented graph !
-
-    block_id = from_id / props->window + to_id / props->window * props->nslices;
-
-    if (edglst_pos[block_id] < maxElemsPerSortBlock - 1)
-    {
-      edglst_in[block_id][edglst_pos[block_id]] = from_id;
-      edglst_in[block_id][edglst_pos[block_id] + 1] = to_id;
-      edglst_pos[block_id] += 2;
-    }
-    else
-    {
-      write_mtxs[block_id].lock();
-      std::swap(edglst_in[block_id], edglst_out[block_id]);
-
-      std::thread sort_write_thread(sort_and_save_list, std::ref(edglst_out[block_id]),
-                                    edglst_pos[block_id], std::ref(tmpfp[block_id]), std::ref(write_mtxs[block_id]), block_id);
-      sort_write_thread.detach();
-
-      edglst_in[block_id][0] = from_id;
-      edglst_in[block_id][1] = to_id;
-      edglst_pos[block_id] = 2;
-    }
-  }
-
-  std::ostringstream oss;
-  oss << "Sorted file " << filenames[filenames.size() - 1];
-  print_strong_log(oss.str());
 
   std::vector<std::thread> sort_write_threads;
   for (uint64_t i = 0; i < props->nblocks; i++)
@@ -250,33 +212,6 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(const std::vector<std::strin
   }
 
   close_files();
-}
-
-template <typename MatrixT>
-void DiskSparseMatrix<MatrixT>::load_GZ(const std::string filename, std::stringstream &ss, std::mutex &read_mtx)
-{
-  igzstream gz_ifp(filename.data());
-
-  if (gz_ifp)
-  {
-    read_mtx.lock();
-    ss.str(""); // empty string stream
-    ss.clear(); // reset the position of EOS
-
-    std::ostringstream oss;
-    oss << "Extracting file " << filename;
-    print_log(oss.str());
-
-    ss << gz_ifp.rdbuf();
-    gz_ifp.close();
-    read_mtx.unlock();
-  }
-  else
-  {
-    std::ostringstream oss;
-    oss << "Cannot open file " << filename << ", exiting...";
-    print_error(oss.str());
-  }
 }
 
 template <typename MatrixT>

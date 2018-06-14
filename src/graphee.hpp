@@ -9,5 +9,6 @@
 #include "disk_vector.hpp"
 #include "vector.hpp"
 #include "pagerank.hpp"
+#include "edgelist.hpp"
 
 #endif // GRAPHEE_H

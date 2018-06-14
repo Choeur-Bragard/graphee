@@ -2,20 +2,23 @@ CC = g++
 OPT = -std=c++11 -O3 -pthread
 #OPT = -std=c++11 -g -pthread
 INC = -I src/.
-LIB = src/snappy/build/libsnappy.a -lgzstream -lz -lm
+LIB = src/snappy/build/libsnappy.a -lz -lm
 
 all: examples
 
 docs: .doxyconf
 	doxygen .doxyconf
 
-examples: split matvecprod pagerank
+examples: split matvecprod pagerank edgelist
 
-split: examples/split.cpp src/utils.cpp
+split: examples/split.cpp src/edgelist.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
-matvecprod: examples/matvecprod.cpp src/utils.cpp
+matvecprod: examples/matvecprod.cpp src/edgelist.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
-pagerank: examples/pagerank.cpp src/utils.cpp
+pagerank: examples/pagerank.cpp src/edgelist.cpp src/utils.cpp
+	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
+
+edgelist: examples/edgelist.cpp src/edgelist.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
