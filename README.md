@@ -38,8 +38,38 @@ Technically we use `pthread` and `OpenMP` technologies for the parallel calculat
 The full support or `CUDA` standards is one of the major properties to be included soon !
 
 ## Examples & functionalities
-**NOTE: For now on, the code contains all the needed tools for the PageRank.
-But I need to write a small script to DL few test data. I'm on my way...**
+
+### Preliminaries
+- Verify that `zlib` is installed on your computer. If not follow the link [ZLib](http://zlib.net).
+- Synchronize the `submodules` necessary for the code, with the following command:
+```
+$ git submodules update
+```
+- Compile the customized version of `Snappy` which supports files over `4.2 GB` (again the 2018-problem of `int32`):
+```
+$ cd src/snappy
+$ mkdir -p build
+$ cd build && cmake ..
+$ make
+```
+
+### Pagerank example
+Compile the [Pagerank example](examples/pagerank.cpp) and download the data:
+```
+$ make pagerank
+$ ./load_data.sh
+```
+Then launch it ! :tada:
+```
+$ ./pagerank filelist
+```
+
+## Documentation
+The documentation is realized with [Doxygen](https://www.stack.nl/~dimitri/doxygen/), create it:
+```
+$ mkdir -p docs
+$ make docs
+```
 
 ## Contributing
 Please first read [`CONTRIBUTING.md`](CONTRIBUTING.md) and propose what you want or you can fix or add functionalities detailed
