@@ -46,7 +46,7 @@ int main (int argc, char** argv)
    * Load from the raw files the structure of
    * the graph
    */
-  //adjacency_matrix.load_edgelist(filenames);
+  adjacency_matrix.load_edgelist(filenames);
 
   /**
    * Declare the Pagerank object

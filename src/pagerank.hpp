@@ -54,9 +54,9 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters)
 
     pagerank_itp1.add_xmatvec_prod(damp, *adj_mat, pagerank);
 
-    //pagerank_itp1 += (1. - damp)/((float)props->nvertices);
+    pagerank_itp1 += (1. - damp)/((float)props->nvertices);
 
-    //pagerank_itp1.swap(pagerank);
+    pagerank_itp1.swap(pagerank);
   }
 }
 
