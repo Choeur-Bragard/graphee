@@ -309,7 +309,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dma
   }
 
   std::unique_lock<std::mutex> mlock(mtx);
-  while (alloc_mem + alloc_needs > props->ram_limit)
+  while (dmat->props->alloc_memory + alloc_needs > props->ram_limit)
   {
     cond.wait(mlock);
   }
@@ -399,7 +399,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dma
 
 template <>
 void DiskSparseMatrix<SparseBMatrixCSR>::diskblock_builder(DiskSparseMatrix<SparseBMatrixCSR> *dmat,
-    uint64_t line, uint64_t col, std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx,
+    uint64_t line, uint64_t col, std::fstream &tmpfp, std::mutex &mtx,
     std::condition_variable &cond)
 {
   Properties *props = dmat->props;
@@ -435,7 +435,7 @@ void DiskSparseMatrix<SparseBMatrixCSR>::diskblock_builder(DiskSparseMatrix<Spar
   }
 
   std::unique_lock<std::mutex> mlock(mtx);
-  while (alloc_mem + alloc_needs > props->ram_limit)
+  while (dmat->props->alloc_memory + alloc_needs > props->ram_limit)
   {
     cond.wait(mlock);
   }
