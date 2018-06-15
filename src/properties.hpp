@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <atomic>
 
 namespace graphee
 {
@@ -14,9 +15,10 @@ public:
     nblocks(0), window(0) {}
 
   Properties(std::string name, uint64_t nvertices, uint64_t nslices, uint64_t nthreads,
-             size_t ram_limit, size_t sort_limit) : name(name), nvertices(nvertices * 1000000), nslices(nslices), nthreads(nthreads),
+             size_t ram_limit, size_t sort_limit) :
+    name(name), nvertices(nvertices * 1000000), nslices(nslices), nthreads(nthreads),
     ram_limit(ram_limit), sort_limit(sort_limit), nblocks(nslices * nslices),
-    window(nvertices * 1000000 / nslices) {}
+    window(nvertices * 1000000 / nslices), alloc_memory(0) {}
 
   ~Properties() {}
 
@@ -33,6 +35,8 @@ public:
   const size_t sort_limit;
   const uint64_t nblocks;
   const uint64_t window;
+
+  std::atomic<size_t> alloc_memory;
 }; // class graphee::Properties
 
 } // namespace graphee

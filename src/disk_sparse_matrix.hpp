@@ -79,7 +79,7 @@ private:
 
   void diskblock_manager();
   static void diskblock_builder(DiskSparseMatrix<MatrixT> *dmat, uint64_t line, uint64_t col,
-                                std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx, std::condition_variable &cond);
+                                std::fstream &tmpfp, std::mutex &mtx, std::condition_variable &cond);
 
   std::string get_block_filename(uint64_t line, uint64_t col);
 
@@ -249,7 +249,6 @@ void DiskSparseMatrix<MatrixT>::diskblock_manager()
   std::mutex mtx;
   std::condition_variable cond;
 
-  size_t alloc_mem{0};
   size_t ram_limit{props->ram_limit};
   uint64_t block_id;
 
@@ -260,7 +259,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_manager()
       block_id = line + col * props->nslices;
 
       diskblock_threads.push_back(std::thread(diskblock_builder, this, line, col, std::ref(tmpfp[block_id]),
-                                              std::ref(alloc_mem), std::ref(mtx), std::ref(cond)));
+                                              std::ref(mtx), std::ref(cond)));
     }
   }
 
@@ -274,7 +273,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_manager()
 
 template <typename MatrixT>
 void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dmat, uint64_t line, uint64_t col,
-    std::fstream &tmpfp, size_t &alloc_mem, std::mutex &mtx, std::condition_variable &cond)
+    std::fstream &tmpfp, std::mutex &mtx, std::condition_variable &cond)
 {
   Properties *props = dmat->props;
 
@@ -314,7 +313,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dma
   {
     cond.wait(mlock);
   }
-  alloc_mem += alloc_needs;
+  dmat->props->alloc_memory += alloc_needs;
   mlock.unlock();
 
   MatrixT mat(props, props->window, props->window, nnz);
@@ -394,10 +393,7 @@ void DiskSparseMatrix<MatrixT>::diskblock_builder(DiskSparseMatrix<MatrixT> *dma
 
   mat.save(dmat->get_block_filename(line, col), Utils::SNAPPY);
 
-  mtx.lock();
-  alloc_mem -= alloc_needs;
-  mtx.unlock();
-
+  dmat->props->alloc_memory -= alloc_needs;
   cond.notify_one();
 }
 
@@ -443,7 +439,7 @@ void DiskSparseMatrix<SparseBMatrixCSR>::diskblock_builder(DiskSparseMatrix<Spar
   {
     cond.wait(mlock);
   }
-  alloc_mem += alloc_needs;
+  dmat->props->alloc_memory += alloc_needs;
   mlock.unlock();
 
   SparseBMatrixCSR mat(props, props->window, props->window, nnz);
@@ -520,10 +516,7 @@ void DiskSparseMatrix<SparseBMatrixCSR>::diskblock_builder(DiskSparseMatrix<Spar
 
   mat.save(dmat->get_block_filename(line, col), Utils::SNAPPY);
 
-  mtx.lock();
-  alloc_mem -= alloc_needs;
-  mtx.unlock();
-
+  dmat->props->alloc_memory -= alloc_needs;
   cond.notify_one();
 }
 

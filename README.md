@@ -54,9 +54,9 @@ implemented yet**
 
 ### Preliminaries
 - Verify that `zlib` is installed on your computer. If not follow the link [ZLib](http://zlib.net).
-- Synchronize the `submodules` necessary for the code, with the following command:
+- Clone `graphee` and synchronize the `submodules` necessary for the code, with the following command:
 ```
-$ git submodules update
+$ git clone --recursive https://github.com/QwantResearch/graphee.git
 ```
 - Compile the customized version of `Snappy` which supports files over `4.2 GB` (again the 2018-problem of `int32`):
 ```
