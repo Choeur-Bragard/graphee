@@ -63,6 +63,17 @@ Then launch it ! :tada:
 ```
 $ ./pagerank filelist
 ```
+#### Benchmarks
+We are presenting the results for the
+domain-level graph of [CommonCrawl](https://commoncrawl.org/2018/05/webgraphs-feb-mar-apr-2018/):
+- 98 million vertices,
+- 1.5 billion edges.
+
+The graph prepossessing (RAW to CSR) and the 10 iterations of the Pagerank,
+runs in **30 minutes and 20 seconds** on a Intel Core i7-7700HQ @ 2.8GHz x 8, 16GB RAM, 512GB SSD.
+
+**NOTE: That's a bit slow because OpenMP parallelization of linear algebra operations are not
+implemented yet**
 
 ## Documentation
 The documentation is realized with [Doxygen](https://www.stack.nl/~dimitri/doxygen/), create it:

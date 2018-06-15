@@ -66,14 +66,15 @@ std::string Edgelist::get_filename()
 
 void Edgelist::deflate_chunk(Edgelist* el, std::stringstream &sstream_read)
 {
-  std::ostringstream oss;
-  oss << "Deflate part " << el->part_id << " of file \'" << el->get_filename() << "\'";
-  print_log(oss.str());
-
   int ret = gzread(el->file_ptr, el->buf, el->buf_size);
 
   if (ret > 0)
     sstream_read << el->buf;
+
+  std::ostringstream oss;
+  oss << "Deflate part " << el->part_id << " of file \'" << el->get_filename() << "\' ";
+  oss << "(" << ret/(1UL << 20) << " MB)";
+  print_log(oss.str());
 
   el->is_data = ret > 0;
 

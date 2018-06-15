@@ -40,13 +40,15 @@ public:
   void save(std::string name, int fileformat = Utils::BIN);
   void load(std::string name);
 
-  Vector<ValueT> &operator+=(Vector<ValueT>& rvec);
+  Vector<ValueT> &operator+=(const Vector<ValueT>& rvec);
   Vector<ValueT> &operator+=(ValueT val);
   Vector<ValueT> &operator*=(ValueT val);
 
+  Vector<ValueT> &operator=(Vector<ValueT> &&rvec);
+
   const std::string vector_typename{"Vector"};
 
-  uint64_t get_lines();
+  uint64_t get_lines() const;
 
   using ValueType = ValueT;
 
@@ -165,7 +167,16 @@ void Vector<ValueT>::load(std::string name)
 }
 
 template <typename ValueT>
-Vector<ValueT> &Vector<ValueT>::operator+=(Vector<ValueT>& rvec)
+Vector<ValueT> &Vector<ValueT>::operator=(Vector<ValueT> &&rvec)
+{
+  std::cout << "Move assignment" << std::endl;
+  std::vector<ValueT>::operator = (std::move(rvec));
+  std::swap(props, rvec.props);
+  return *this;
+}
+
+template <typename ValueT>
+Vector<ValueT> &Vector<ValueT>::operator+=(const Vector<ValueT>& rvec)
 {
   if (this->size() != rvec.size())
   {
@@ -212,7 +223,7 @@ Properties* Vector<ValueT>::get_properties()
 }
 
 template <typename ValueT>
-uint64_t Vector<ValueT>::get_lines()
+uint64_t Vector<ValueT>::get_lines() const
 {
   return this->size();
 }

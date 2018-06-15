@@ -54,6 +54,8 @@ public:
     mat.nnz = 0;
   }
 
+  SparseBMatrixCSR &operator=(SparseBMatrixCSR &&rmat);
+
   ~SparseBMatrixCSR()
   {
     ia.clear();
@@ -75,7 +77,7 @@ public:
   void clear();
 
   template <typename vecValueT>
-  Vector<vecValueT> &operator*(Vector<vecValueT> &rvec);
+  Vector<vecValueT> operator*(const Vector<vecValueT> &rvec);
 
   const std::string matrix_typename{"SparseBMatrixCSR"};
 
@@ -294,8 +296,19 @@ void SparseBMatrixCSR::clear()
   nnz = 0;
 }
 
+SparseBMatrixCSR &SparseBMatrixCSR::operator=(SparseBMatrixCSR &&rmat)
+{
+  std::swap(ia, rmat.ia);
+  std::swap(ja, rmat.ja);
+  std::swap(m, rmat.m);
+  std::swap(n, rmat.n);
+  std::swap(nnz, rmat.nnz);
+
+  return *this;
+}
+
 template <typename vecValueT>
-Vector<vecValueT> &SparseBMatrixCSR::operator*(Vector<vecValueT> &rvec)
+Vector<vecValueT> SparseBMatrixCSR::operator*(const Vector<vecValueT> &rvec)
 {
   if (n != rvec.get_lines())
   {
@@ -305,7 +318,7 @@ Vector<vecValueT> &SparseBMatrixCSR::operator*(Vector<vecValueT> &rvec)
     exit(-1);
   }
 
-  Vector<vecValueT> &res = *new Vector<vecValueT>(rvec.get_properties(), m, 0.);
+  Vector<vecValueT> res(props, m, 0.);
 
   for (uint64_t i = 0; i < m; i++)
   {
