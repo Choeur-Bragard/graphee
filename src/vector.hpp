@@ -46,6 +46,8 @@ public:
 
   Vector<ValueT> &operator=(Vector<ValueT> &&rvec);
 
+  Vector<ValueT> &operator/=(Vector<ValueT> &rvec);
+
   const std::string vector_typename{"Vector"};
 
   uint64_t get_lines() const;
@@ -186,6 +188,7 @@ Vector<ValueT> &Vector<ValueT>::operator+=(const Vector<ValueT>& rvec)
     exit(-1);
   }
 
+#pragma omp parallel for num_threads(props->nthreads)
   for (uint64_t i = 0; i < this->size(); i++)
   {
     this->at(i) += rvec[i];
@@ -197,6 +200,7 @@ Vector<ValueT> &Vector<ValueT>::operator+=(const Vector<ValueT>& rvec)
 template <typename ValueT>
 Vector<ValueT> &Vector<ValueT>::operator+=(ValueT val)
 {
+#pragma omp parallel for num_threads(props->nthreads)
   for (uint64_t i = 0; i < this->size(); i++)
   {
     this->at(i) += val;
@@ -208,9 +212,22 @@ Vector<ValueT> &Vector<ValueT>::operator+=(ValueT val)
 template <typename ValueT>
 Vector<ValueT> &Vector<ValueT>::operator*=(ValueT val)
 {
+#pragma omp parallel for num_threads(props->nthreads)
   for (uint64_t i = 0; i < this->size(); i++)
   {
     this->at(i) *= val;
+  }
+
+  return (*this);
+}
+
+template <typename ValueT>
+Vector<ValueT> &Vector<ValueT>::operator/=(Vector<ValueT> &rvec)
+{
+#pragma omp parallel for num_threads(props->nthreads)
+  for (uint64_t i = 0; i < props->window; i++)
+  {
+    rvec[i] == 0 ? this->at(i) = 0 : this->at(i) /= rvec[i];
   }
 
   return (*this);

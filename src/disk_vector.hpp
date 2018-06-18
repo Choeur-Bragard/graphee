@@ -70,7 +70,10 @@ public:
   }
 
   template <typename DiskMatrixT>
-  void add_xmatvec_prod(typename VectorT::ValueType x, DiskMatrixT &mat, DiskVector<VectorT> &vec);
+  void dmat_prod_dvec(typename VectorT::ValueType a, DiskMatrixT &dmat, DiskVector<VectorT> &dvec);
+
+  template <typename DiskMatrixT>
+  void dmat_prod_dvec_over_dvec(typename VectorT::ValueType a, DiskMatrixT &dmat, DiskVector<VectorT> &ldvec, DiskVector<VectorT> &rdvec);
 
   DiskVector<VectorT> &operator+=(typename VectorT::ValueType val);
 
@@ -176,7 +179,7 @@ DiskVector<VectorT> &DiskVector<VectorT>::operator+=(typename VectorT::ValueType
 
 template <typename VectorT>
 template <typename DiskMatrixT>
-void DiskVector<VectorT>::add_xmatvec_prod(typename VectorT::ValueType x, DiskMatrixT &dmat, DiskVector<VectorT> &dvec)
+void DiskVector<VectorT>::dmat_prod_dvec(typename VectorT::ValueType a, DiskMatrixT &dmat, DiskVector<VectorT> &dvec)
 {
   if (dmat.n != dvec.m)
   {
@@ -186,18 +189,50 @@ void DiskVector<VectorT>::add_xmatvec_prod(typename VectorT::ValueType x, DiskMa
     exit(-1);
   }
 
+#pragma omp parallel for
   for (uint64_t line = 0; line < props->nslices; line++)
   {
-    VectorT lvec (std::move(this->get_slice(line)));
+    VectorT res (std::move(this->get_slice(line)));
     for (uint64_t col = 0; col < props->nslices; col++)
     {
       typename DiskMatrixT::MatrixType smat = std::move(dmat.get_block(line, col));
       VectorT rvec (std::move(dvec.get_slice(col)));
 
-      rvec *= x;
-      lvec += smat * rvec;
+      rvec *= a;
+      res += smat * rvec;
     }
-    lvec.save(this->get_slice_filename(line));
+    res.save(this->get_slice_filename(line));
+  }
+}
+
+template <typename VectorT>
+template <typename DiskMatrixT>
+void DiskVector<VectorT>::dmat_prod_dvec_over_dvec(typename VectorT::ValueType a, DiskMatrixT &dmat,
+    DiskVector<VectorT> &ldvec, DiskVector<VectorT> &rdvec)
+{
+  if (dmat.n != ldvec.m && ldvec.m != rdvec.m)
+  {
+    std::ostringstream oss;
+    oss << "Wrong dimensions in Matrix-Vector product";
+    print_error(oss.str());
+    exit(-1);
+  }
+
+#pragma omp parallel for
+  for (uint64_t line = 0; line < props->nslices; line++)
+  {
+    VectorT res (std::move(this->get_slice(line)));
+    for (uint64_t col = 0; col < props->nslices; col++)
+    {
+      typename DiskMatrixT::MatrixType smat = std::move(dmat.get_block(line, col));
+      VectorT lvec (std::move(ldvec.get_slice(col)));
+      VectorT rvec (std::move(rdvec.get_slice(col)));
+
+      rvec *= a;
+      lvec /= rvec;
+      res += smat * lvec;
+    }
+    res.save(this->get_slice_filename(line));
   }
 }
 

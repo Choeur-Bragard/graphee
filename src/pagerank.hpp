@@ -42,19 +42,18 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters)
 
   pagerank = std::move(DiskVector<Vector<float>>(props, "pr", 1.));
   out_bounds = std::move(DiskVector<Vector<float>>(props, "ob", 0.));
-  out_bounds.add_xmatvec_prod(1., *adj_mat, pagerank);
+  out_bounds.dmat_prod_dvec(1., *adj_mat, pagerank);
 
+  pagerank = std::move(DiskVector<Vector<float>>(props, "pr",  1./((float)props->nvertices)));
   for (uint64_t loop_id = 0; loop_id < niters; loop_id++)
   {
     std::ostringstream oss;
     oss << "Start Pagerank loop #" << loop_id;
     print_strong_log(oss.str());
 
-    pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", 0.));
+    pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", (1. - damp)/((float)props->nvertices)));
 
-    pagerank_itp1.add_xmatvec_prod(damp, *adj_mat, pagerank);
-
-    pagerank_itp1 += (1. - damp)/((float)props->nvertices);
+    pagerank_itp1.dmat_prod_dvec_over_dvec(damp, *adj_mat, pagerank, out_bounds);
 
     pagerank_itp1.swap(pagerank);
   }

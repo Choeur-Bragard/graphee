@@ -3,12 +3,19 @@
 #include <vector>
 #include <string>
 
+#include <omp.h>
+
 #include "graphee.hpp"
 
 using namespace graphee;
 
 int main (int argc, char** argv)
 {
+  /**
+   * Necessary for linear algebra operations
+   */
+  omp_set_nested(1);
+
   /**
    * Declare the properties of the graph
    */

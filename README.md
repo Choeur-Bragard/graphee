@@ -34,7 +34,7 @@ which presents high speedups for the matrix modifications.
 **Also a binding of Graphee with `Python` is under development !**
 
 ## Efficiency
-Technically we use `pthread` and ~~`OpenMP`~~ technologies for the parallel calculations on CPUs.
+Technically we use `pthread` and `OpenMP` technologies for the parallel calculations on CPUs.
 The full support or `CUDA` standards is one of the major properties to be included soon !
 
 ### Benchmarks
@@ -44,11 +44,8 @@ domain-level graph of the [CommonCrawl](https://commoncrawl.org/2018/05/webgraph
 - 1.5 billion edges.
 
 The graph prepossessing (RAW to CSR) and the 10 iterations of the Pagerank,
-runs in **26 minutes and 56 seconds** on a Dell XPS laptop made of an Intel Core i7-7700HQ @ 2.8GHz x 8, 16GB RAM, 512GB SSD.
+runs in **16 minutes and 11 seconds** on a Dell XPS laptop made of an Intel Core i7-7700HQ @ 2.8GHz x 8, 16GB RAM, 512GB SSD.
 (We limited the RAM usage to 10GB to avoid freezing because of the RAM usage of other apps)
-
-**NOTE: That's a bit slow because OpenMP parallelization of linear algebra operations are not
-implemented yet**
 
 ## Examples & functionalities
 
