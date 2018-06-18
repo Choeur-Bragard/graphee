@@ -1,6 +1,6 @@
 CC = g++
 OPT = -std=c++11 -O3 -pthread
-INC = -I src/.
+INC = -I src/. -I src/snappy/build/.
 LIB = src/snappy/build/libsnappy.a -lz -lm
 
 all: examples
