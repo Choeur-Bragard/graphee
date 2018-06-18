@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <typeinfo>
 
 #include "snappy/snappy.h"
 
