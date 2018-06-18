@@ -70,6 +70,8 @@ $ make
 Compile the [Pagerank example](examples/pagerank.cpp) and download the data:
 ```
 $ make pagerank
+$ cd examples/
+$ chmod u+x load_data.sh
 $ ./load_data.sh
 ```
 Then launch it ! :tada:

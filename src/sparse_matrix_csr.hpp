@@ -307,6 +307,7 @@ Vector<vecValueT> &SparseMatrixCSR<ValueT>::operator*(Vector<vecValueT> &rvec)
 
   Vector<vecValueT> res(rvec.get_properties(), m, 0.);
 
+#pragma omp parallel for num_threads(props->nthreads)
   for (uint64_t i = 0; i < m; i++)
   {
     for (uint64_t ja_idx = ia[i]; ja_idx < ia[i + 1]; ja_idx++)
