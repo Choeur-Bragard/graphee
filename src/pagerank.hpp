@@ -18,6 +18,9 @@ class Pagerank
 {
 public:
   /** Constructor of the Pagerank object
+   *
+   * Please take a look to: https://en.wikipedia.org/wiki/PageRank#Iterative
+   * for a more precise description of the pagerank algorithm.
    * 
    * @param properties The pointer to the properties of the graph
    * @param adjency_matrix The pointer to the adjacency matrix of the graph
@@ -41,63 +44,50 @@ public:
   void save_top_pagerank(uint64_t ntops, std::string out_filename) {}
 
 private:
-  const float damp; /*!< The pagerank damping factor */
-  Properties* props; /*!< Pointer to the graph properties */
-  DiskSparseMatrixT* adj_mat; /*!< Pointer to the ajacency matrix */
+  const float damp; ///< The pagerank damping factor
+  Properties* props; ///< Pointer to the graph properties
+  DiskSparseMatrixT* adj_mat; ///< Pointer to the ajacency matrix
 
-  DiskVector<Vector<float>> pagerank; /*!< Disk vector to save pagerank */
-  DiskVector<Vector<float>> pagerank_itp1; /*!< Temporary disk vector to save pagerank at iteration+1 */
-  DiskVector<Vector<float>> out_bounds; /*!< Disk vector to save the number of out links */
+  DiskVector<Vector<float>> pagerank; ///< Disk vector to save pagerank
+  DiskVector<Vector<float>> pagerank_itp1; ///< Temporary disk vector to save pagerank at iteration+1
+  DiskVector<Vector<float>> out_bounds; ///< Disk vector to save the number of out links
 }; // class graphe::Pagerank
 
 template <typename DiskSparseMatrixT>
 void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters)
 {
-  /** One verifies that the ajacency matrix is not empty
-   */
+  // One verifies that the ajacency matrix is not empty
   if (adj_mat->empty())
   {
     print_error("Cannot compute PageRank, the \'adjency_matrix\' is empty");
     exit(-1);
   }
 
-  /** 
-   * We compute the number of out links for each page
-   * One uses a trick to declare as low as possible disk vector.
-   * Here, for instance we use temporary the 'pr' disk vector.
-   */
+  // We compute the number of out links for each page
+  // One uses a trick to declare as low as possible disk vector.
+  // Here, for instance we use temporary the 'pr' disk vector.
   pagerank = std::move(DiskVector<Vector<float>>(props, "pr", 1.));
   out_bounds = std::move(DiskVector<Vector<float>>(props, "ob", 0.));
   out_bounds.dmat_prod_dvec(1., *adj_mat, pagerank);
 
-  /**
-   * After computing the out_bounds with the pagerank disk vector,
-   * we initiate it to 1/N.
-   */
+  // After computing the out_bounds with the pagerank disk vector,
+  // we initiate it to 1/N.
   pagerank = std::move(DiskVector<Vector<float>>(props, "pr",  1./((float)props->nvertices)));
   for (uint64_t loop_id = 0; loop_id < niters; loop_id++)
   {
-    /**
-     * Printing the logs in strong fond (green color)
-     */
+    // Printing the logs in strong fond (green color)
     std::ostringstream oss;
     oss << "Start Pagerank loop #" << loop_id;
     print_strong_log(oss.str());
 
-    /**
-     * One inits the pagerank vector at iteration T+1:
-     * \f$ PR_{t+1} = \frac{1-d}{N} \f$
-     */
+    // One inits the pagerank vector at iteration T+1:
+    // \f$ PR_{t+1} = \frac{1-d}{N} \f$
     pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", (1. - damp)/((float)props->nvertices)));
 
-    /**
-     * We compute \f$ PR_{t+1} += d \frac{A PR_{t}}{O} \f$
-     */
+    // We compute \f$ PR_{t+1} += d \frac{A PR_{t}}{O} \f$
     pagerank_itp1.dmat_prod_dvec_over_dvec(damp, *adj_mat, pagerank, out_bounds);
 
-    /**
-     * We swap the values between disk vector \f$ PR \f$ and \f$ PR_{t+1} \f$
-     */
+    // We swap the values between disk vector \f$ PR \f$ and \f$ PR_{t+1} \f$
     pagerank_itp1.swap(pagerank);
   }
 }
