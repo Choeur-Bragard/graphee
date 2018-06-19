@@ -40,10 +40,10 @@ public:
     }
   }
 
-  SparseMatrixCSR(Properties *properties, uint64_t nlines, uint64_t ncols,
-                  uint64_t nonzero_elems, uint64_t pitch, uint64_t alpha,
-                  ValueT init_val = 0.) :
-    SparseBMatrixCSR(properties, nlines, ncols, nonzero_elems, pitch, alpha)
+  SparseMatrixDCSR(Properties *properties, uint64_t nlines, uint64_t ncols,
+                   uint64_t nonzero_elems, uint64_t pitch, uint64_t alpha,
+                   ValueT init_val = 0.) :
+    SparseBMatrixDCSR(properties, nlines, ncols, nonzero_elems, pitch, alpha)
   {
     if (typeid(ValueT) == typeid(bool))
     {
@@ -65,7 +65,7 @@ public:
 
   SparseMatrixDCSR(SparseMatrixDCSR<ValueT> &&mat) : SparseBMatrixDCSR(std::move(mat)), a(std::move(mat.a)) {}
 
-  ~SparseMatrixCSR()
+  ~SparseMatrixDCSR()
   {
     a.clear();
   }
@@ -86,7 +86,7 @@ public:
 
   template <typename vecValueT>
   Vector<vecValueT> &operator*(Vector<vecValueT> &rvec);
-  SparseMatrixCSR<ValueT> &operator*(ValueT rval);
+  SparseMatrixDCSR<ValueT> &operator*(ValueT rval);
 
   const std::string matrix_typename{"SparseMatrixDCSR"};
 

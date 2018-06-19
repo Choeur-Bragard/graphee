@@ -25,7 +25,7 @@ namespace graphee
  * This is straightforward in non-weighted-edge graphs.
  */
 
-class SparseBMatrixCSR
+class SparseBMatrixDCSR
 {
 public:
   SparseBMatrixDCSR(Properties *properties) :
@@ -48,7 +48,7 @@ public:
     }
   }
 
-  SparseBMatrixCSR(SparseBMatrixCSR &&mat) : props(mat.props), m(mat.m), n(mat.n),
+  SparseBMatrixDCSR(SparseBMatrixDCSR &&mat) : props(mat.props), m(mat.m), n(mat.n),
     nnz(mat.nnz), ia(std::move(mat.ia)), ja(std::move(mat.ja)), pitch(mat.pitch),
     alpha(mat.alpha)
   {
@@ -60,9 +60,9 @@ public:
     mat.alpha = 0;
   }
 
-  SparseBMatrixCSR &operator=(SparseBMatrixCSR &&rmat);
+  SparseBMatrixDCSR &operator=(SparseBMatrixDCSR &&rmat);
 
-  ~SparseBMatrixCSR()
+  ~SparseBMatrixDCSR()
   {
     ia.clear();
     ja.clear();
