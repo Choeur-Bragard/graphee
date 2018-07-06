@@ -87,7 +87,7 @@ $ make docs
 Please first read [`CONTRIBUTING.md`](CONTRIBUTING.md) and propose what you want or you can fix or add functionalities detailed
 within [`TODO.md`](TODO.md).
 
-For any questions, comments, or collaborations, please use: **n.martin [at] qwantresearch [dot] com**.
+For any questions, comments, or collaborations, please use: **n.martin [at] qwantresearch [dot] com** or also [@stdthread](https://www.twitter.com/stdthread) on Twitter.
 
 ## References
 1. [The Anatomy of a Large-Scale Hypertextual Web Search Engine, *S. Brin and L. Page*](http://infolab.stanford.edu/pub/papers/google.pdf)
