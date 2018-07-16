@@ -38,8 +38,8 @@ public:
   {
     if ((nnz + alpha + 2 * m * pitch) * sizeof(uint64_t) < props->ram_limit)
     {
-      ia.resize(2 * m * pitch, 0);
-      ja.resize(nnz + alpha, 0);
+      ia.resize(2 * m * pitch, -1);
+      ja.resize(nnz + alpha, -1);
     }
     else
     {
@@ -93,8 +93,8 @@ public:
   uint64_t get_nonzeros();
 
 private:
-  std::vector<uint64_t> ia;
-  std::vector<uint64_t> ja;
+  std::vector<int64_t> ia;
+  std::vector<int64_t> ja;
 
   Properties *props;
 
@@ -102,6 +102,7 @@ private:
   uint64_t n;
   uint64_t nnz;
   uint64_t fill_id;
+  uint64_t cur_pos;
 
   uint64_t alpha;
   uint64_t pitch;
@@ -130,6 +131,34 @@ void SparseBMatrixDCSR::fill(uint64_t i, uint64_t j)
 /*! Inserting element in a DCSR matrix */
 void SparseBMatrixDCSR::insert(uint64_t i, uint64_t j)
 {
+  uint64_t pitch_id;
+  for (pitch_id = 1;
+      ia[2 * (pitch * i + pitch_id)] > 0 && pitch_id < pitch;
+      pitch_id++)
+  {
+    if (ia[2 * (pitch * i + pitch_id) + 1] == cur_pos)
+      break;
+  }
+
+  /**
+   * The empty space for filling new elements is
+   * full, so defrag()
+   */
+  if (pitch_id == pitch)
+  {
+    defrag();
+    pitch_id = 1;
+
+    ia[2 * (pitch * i + pitch_id)] = cur_pos;
+    ia[2 * (pitch * i + pitch_id) + 1] = cur_pos;
+  }
+  else
+  {
+    cur_pos++;
+    ia[2 * (pitch * i + pitch_id) + 1] = cur_pos;
+  }
+
+  ja[cur_pos] = j;
 }
 
 /*! Remove element of the DCSR matrix */
