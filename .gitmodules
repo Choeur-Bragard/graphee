@@ -4,3 +4,6 @@
 [submodule "src/sort"]
 	path = src/sort
 	url = https://github.com/swenson/sort.git
+[submodule "vendor/onelogger"]
+	path = vendor/onelogger
+	url = git@git.qwant.ninja:CoreSearch/onelogger.git
