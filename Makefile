@@ -1,5 +1,5 @@
 CC = g++
-OPT = -std=c++11 -O3 -pthread -fopenmp -g
+OPT = -std=c++11 -O3 -pthread -fopenmp
 INC = -I src/. -I src/snappy/build/.
 LIB = src/snappy/build/libsnappy.a -lz -lm -lboost_unit_test_framework
 
