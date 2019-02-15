@@ -176,7 +176,6 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &fi
       }
       else
       {
-        
         write_mtxs[block_id].lock();
         std::swap(edglst_in[block_id], edglst_out[block_id]);
 

@@ -142,7 +142,6 @@ void SparseBMatrixCSR::save(std::string name, int fileformat)
   matfp.write(reinterpret_cast<const char *>(&m), sizeof(uint64_t));
   matfp.write(reinterpret_cast<const char *>(&nnz), sizeof(uint64_t));
 
-
   if (fileformat == Utils::BIN)
   {
     matfp.write(reinterpret_cast<const char *>(ia.data()), ia.size() * sizeof(uint64_t));
@@ -155,7 +154,6 @@ void SparseBMatrixCSR::save(std::string name, int fileformat)
     snappy::RawCompress64(reinterpret_cast<char *>(ia.data()), ia.size() * sizeof(uint64_t), ia_snappy, &ia_snappy_size);
 
     matfp.write(reinterpret_cast<const char *>(&ia_snappy_size), sizeof(size_t));
-
     matfp.write(reinterpret_cast<const char *>(ia_snappy), ia_snappy_size);
     delete[] ia_snappy;
     if(ja.size() !=0){
@@ -201,6 +199,7 @@ void SparseBMatrixCSR::load(std::string name)
   matfp.read(reinterpret_cast<char *>(&m), sizeof(uint64_t));
   matfp.read(reinterpret_cast<char *>(&nnz), sizeof(uint64_t));
   n = m;
+  
   if ((nnz + m + 1) * sizeof(uint64_t) < props->ram_limit)
   {
     ia.resize(m + 1, 0);

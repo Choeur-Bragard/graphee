@@ -311,7 +311,6 @@ void DiskVector<VectorT>::dmat_prod_dvec_over_dvec(typename VectorT::ValueType a
   }
 }
   
-
 } // namespace graphee
 
 #endif // GRAPHEE_DISKVEC_H__

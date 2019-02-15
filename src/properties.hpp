@@ -1,9 +1,10 @@
 #ifndef GPE_PROPERTIES_HPP__
 #define GPE_PROPERTIES_HPP__
 
-#include <atomic>
+
 #include <iostream>
 #include <string>
+#include <atomic>
 
 namespace graphee {
 
