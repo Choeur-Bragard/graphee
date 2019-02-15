@@ -124,7 +124,7 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &fi
 {
   if (2 * props->sort_limit * props->nblocks > props->ram_limit)
   {
-    print_error("To few memory allocated for sorting with respect to the \'ram_limit\' setting");
+    print_error("To few memory allocated for sorting with respect to the \'ram_limit\' setting. Available memory is : "+std::to_string(props->ram_limit)+" but expected is at least "+std::to_string(2 * props->sort_limit * props->nblocks));
     exit(-1);
   }
 
@@ -176,6 +176,7 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &fi
       }
       else
       {
+        
         write_mtxs[block_id].lock();
         std::swap(edglst_in[block_id], edglst_out[block_id]);
 
@@ -197,7 +198,7 @@ void DiskSparseMatrix<MatrixT>::read_and_split_list(std::vector<std::string> &fi
   std::vector<std::thread> sort_write_threads;
   for (uint64_t i = 0; i < props->nblocks; i++)
   {
-    if (edglst_pos[i] > 2)
+    if (edglst_pos[i] >= 2)
     {
       write_mtxs[i].lock();
       sort_write_threads.push_back(std::thread (sort_and_save_list, std::ref(edglst_in[i]),

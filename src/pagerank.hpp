@@ -62,30 +62,36 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters)
     print_error("Cannot compute PageRank, the \'adjency_matrix\' is empty");
     exit(-1);
   }
-
-  // We compute the number of out links for each page
-  // One uses a trick to declare as low as possible disk vector.
-  // Here, for instance we use temporary the 'pr' disk vector.
-  pagerank = std::move(DiskVector<Vector<float>>(props, "pr", 1.));
+  
+  //number of outlinks of each node
   out_bounds = std::move(DiskVector<Vector<float>>(props, "ob", 0.));
-  out_bounds.dmat_prod_dvec(1., *adj_mat, pagerank);
+  out_bounds.dmat_columns_sum(*adj_mat);
 
-  // After computing the out_bounds with the pagerank disk vector,
-  // we initiate it to 1/N.
-  pagerank = std::move(DiskVector<Vector<float>>(props, "pr",  1./((float)props->nvertices)));
+  // pagerank is initiated to 1/N.
+  pagerank = std::move(DiskVector<Vector<float>>(props, "pr", 1./((float)props->nvertices)));
+
+  // count the number of nodes without outlinks
+  uint64_t n_sink_nodes=out_bounds.countZeros();
+
+  // amount of score given by the sink nodes to each nodes 
+  float sinkScore = 0;
+
   for (uint64_t loop_id = 0; loop_id < niters; loop_id++)
   {
-    // Printing the logs in strong fond (green color)
     std::ostringstream oss;
     oss << "Start Pagerank loop #" << loop_id;
     print_strong_log(oss.str());
 
-    // One inits the pagerank vector at iteration T+1:
-    // \f$ PR_{t+1} = \frac{1-d}{N} \f$
-    pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", (1. - damp)/((float)props->nvertices)));
+    sinkScore=0;
+    // divide the pagerank score of each node by its number of outlink and update sinkscore 
+    // which is the sum of the score of all sink nodes
+    pagerank.divide_and_sum_Nan(out_bounds, sinkScore);
 
-    // We compute \f$ PR_{t+1} += d \frac{A PR_{t}}{O} \f$
-    pagerank_itp1.dmat_prod_dvec_over_dvec(damp, *adj_mat, pagerank, out_bounds);
+    // One inits the pagerank vector at iteration T+1 with the score received by random jump plus the redistribution from sink node.
+    pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", (1-sinkScore)*(1. - damp)/((float)props->nvertices) +sinkScore/((float)props->nvertices)));
+
+    // We compute \f$ PR_{t+1} \f$
+    pagerank_itp1.dmat_prod_dvec(damp, *adj_mat, pagerank);
 
     // We swap the values between disk vector \f$ PR \f$ and \f$ PR_{t+1} \f$
     pagerank_itp1.swap(pagerank);

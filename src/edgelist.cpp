@@ -77,7 +77,6 @@ void Edgelist::deflate_chunk(Edgelist* el, std::stringstream &sstream_read)
   print_log(oss.str());
 
   el->is_data = ret > 0;
-
   el->mtx->unlock();
 }
 

@@ -78,6 +78,9 @@ public:
 
   template <typename vecValueT>
   Vector<vecValueT> operator*(const Vector<vecValueT> &rvec);
+  
+
+  Vector<float> columns_sum();
 
   const std::string matrix_typename{"SparseBMatrixCSR"};
 
@@ -139,6 +142,7 @@ void SparseBMatrixCSR::save(std::string name, int fileformat)
   matfp.write(reinterpret_cast<const char *>(&m), sizeof(uint64_t));
   matfp.write(reinterpret_cast<const char *>(&nnz), sizeof(uint64_t));
 
+
   if (fileformat == Utils::BIN)
   {
     matfp.write(reinterpret_cast<const char *>(ia.data()), ia.size() * sizeof(uint64_t));
@@ -151,16 +155,18 @@ void SparseBMatrixCSR::save(std::string name, int fileformat)
     snappy::RawCompress64(reinterpret_cast<char *>(ia.data()), ia.size() * sizeof(uint64_t), ia_snappy, &ia_snappy_size);
 
     matfp.write(reinterpret_cast<const char *>(&ia_snappy_size), sizeof(size_t));
+
     matfp.write(reinterpret_cast<const char *>(ia_snappy), ia_snappy_size);
     delete[] ia_snappy;
+    if(ja.size() !=0){
+      size_t ja_snappy_size = snappy::MaxCompressedLength64(ja.size() * sizeof(uint64_t));
+      char *ja_snappy = new char[ja_snappy_size];
+      snappy::RawCompress64(reinterpret_cast<char *>(ja.data()), ja.size() * sizeof(uint64_t), ja_snappy, &ja_snappy_size);
 
-    size_t ja_snappy_size = snappy::MaxCompressedLength64(ja.size() * sizeof(uint64_t));
-    char *ja_snappy = new char[ja_snappy_size];
-    snappy::RawCompress64(reinterpret_cast<char *>(ja.data()), ja.size() * sizeof(uint64_t), ja_snappy, &ja_snappy_size);
-
-    matfp.write(reinterpret_cast<const char *>(&ja_snappy_size), sizeof(size_t));
-    matfp.write(reinterpret_cast<const char *>(ja_snappy), ja_snappy_size);
-    delete[] ja_snappy;
+      matfp.write(reinterpret_cast<const char *>(&ja_snappy_size), sizeof(size_t));
+      matfp.write(reinterpret_cast<const char *>(ja_snappy), ja_snappy_size);
+      delete[] ja_snappy;
+    }
   }
 
   matfp.close();
@@ -195,7 +201,6 @@ void SparseBMatrixCSR::load(std::string name)
   matfp.read(reinterpret_cast<char *>(&m), sizeof(uint64_t));
   matfp.read(reinterpret_cast<char *>(&nnz), sizeof(uint64_t));
   n = m;
-
   if ((nnz + m + 1) * sizeof(uint64_t) < props->ram_limit)
   {
     ia.resize(m + 1, 0);
@@ -234,21 +239,23 @@ void SparseBMatrixCSR::load(std::string name)
       exit(-1);
     }
 
-    size_t ja_snappy_size;
-    matfp.read(reinterpret_cast<char *>(&ja_snappy_size), sizeof(size_t));
+    if(nnz != 0){
+      size_t ja_snappy_size;
+      matfp.read(reinterpret_cast<char *>(&ja_snappy_size), sizeof(size_t));
 
-    char *ja_snappy = new char[ja_snappy_size];
-    matfp.read(reinterpret_cast<char *>(ja_snappy), ja_snappy_size);
+      char *ja_snappy = new char[ja_snappy_size];
+      matfp.read(reinterpret_cast<char *>(ja_snappy), ja_snappy_size);
 
-    uncomp_succeed = snappy::RawUncompress64(ja_snappy, ja_snappy_size, reinterpret_cast<char *>(ja.data()));
-    delete[] ja_snappy;
+      uncomp_succeed = snappy::RawUncompress64(ja_snappy, ja_snappy_size, reinterpret_cast<char *>(ja.data()));
+      delete[] ja_snappy;
 
-    if (!uncomp_succeed)
-    {
-      print_error("SNAPPY uncompression of JA failed");
+      if (!uncomp_succeed)
+      {
+        print_error("SNAPPY uncompression of JA failed");
 
-      matfp.close();
-      exit(-1);
+        matfp.close();
+        exit(-1);
+      }
     }
   }
 
@@ -305,6 +312,19 @@ SparseBMatrixCSR &SparseBMatrixCSR::operator=(SparseBMatrixCSR &&rmat)
   std::swap(nnz, rmat.nnz);
 
   return *this;
+}
+
+// template <typename vecValueT=float>
+Vector<float> SparseBMatrixCSR::columns_sum(){
+
+  Vector<float> res(props, m, 0.);
+
+#pragma omp parallel for num_threads (props->nthreads)
+  for(uint64_t i = 0; i < ja.size(); i++){
+    res[ja[i]]+=1;
+  }
+
+  return res;
 }
 
 template <typename vecValueT>
