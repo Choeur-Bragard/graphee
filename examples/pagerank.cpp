@@ -37,9 +37,11 @@ int main (int argc, char** argv)
   while (filelist.good()) // read the file until EOF
   {
     filelist >> filename;
-    filenames.push_back(filename);
+    if(filename.size()>0 && filename.at(0)!='#')
+    {
+      filenames.push_back(filename);
+    }
   }
-  filenames.pop_back();
   filelist.close();
 
   /**
