@@ -102,12 +102,14 @@ void Vector<ValueT>::save(std::string name, int fileformat)
 template <class ValueT>
 void Vector<ValueT>::load(std::string name)
 {
+  // std::cout<<"loading "<<name<<std::endl;
   this->clear();
   std::ifstream vecfp(name, std::ios_base::binary);
 
   /* Save explicitly Vector properties */
   size_t vector_typename_size;
   vecfp.read(reinterpret_cast<char *>(&vector_typename_size), sizeof(size_t));
+  // std::cout<<"loading "<<name<<" size : "<<vector_typename_size<<std::endl;
 
   char read_vector_typename[vector_typename_size + 1];
   vecfp.read(reinterpret_cast<char *>(read_vector_typename), vector_typename_size);

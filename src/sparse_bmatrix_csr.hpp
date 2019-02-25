@@ -88,9 +88,11 @@ public:
   uint64_t get_columns();
   uint64_t get_nonzeros();
 
-private:
-  std::vector<uint64_t> ia;
+
+   std::vector<uint64_t> ia;
   std::vector<uint64_t> ja;
+private:
+ 
 
   Properties *props;
 

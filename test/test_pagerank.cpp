@@ -84,6 +84,7 @@ BOOST_AUTO_TEST_CASE( test_smallGraph )
                  &adjacency_matrix, // give the adress to the adjacency matrix
                  0.85); // damping factor of the Pagerank (original value)
 
+    std::cout<<"adjacency lines : "<<adjacency_matrix.m<<std::endl;
     /**
      * Compute the Pagerank with 10 iterations
      */
@@ -102,6 +103,53 @@ BOOST_AUTO_TEST_CASE( test_smallGraph )
         }
     }
     std::cout<<"SCORE SUM : "<<score_sum<<std::endl;
+    clean_pagerank_files(props);
+}
+
+
+BOOST_AUTO_TEST_CASE( test_oneEdge )
+/* Compare with void free_test_function() */
+{
+  graphee::Properties props(
+      std::string("test_oneEdge"),            // name of your graph
+      2,                              // number of nodes
+      2,                         // number of slices
+      1,                              // number of threads
+      5 * graphee::Properties::GB,    // max RAM value
+      128 * graphee::Properties::MB); // max size of sorting vector
+  
+  graphee::DiskSparseMatrix<graphee::SparseBMatrixCSR> adjacency_matrix(
+      &props, // graph properties
+      "adj");
+  
+  std::vector<std::string> filenames;
+  filenames.push_back("test/ressources/oneEdge.txt.gz");
+  adjacency_matrix.load_edgelist(filenames);
+  
+    graphee::Pagerank<graphee::DiskSparseMatrix<graphee::SparseBMatrixCSR>>
+        pagerank(&props,            // graph properties
+                 &adjacency_matrix, // give the adress to the adjacency matrix
+                 0.85); // damping factor of the Pagerank (original value)
+
+    std::cout<<"adjacency lines : "<<adjacency_matrix.m<<std::endl;
+    /**
+     * Compute the Pagerank with 10 iterations
+     */
+    pagerank.compute_pagerank(3);
+    long n=0;
+    float score_sum=0;
+    graphee::Vector<float> vec(&props);
+    // float expected[] = {0.21495,0.15189,0.03953,0.26713,0.22387,0.10260};
+    for(uint64_t slice_i=0; slice_i<props.nslices; slice_i++){
+        vec.load("test_oneEdge_pr_dvecslc_"+std::to_string(slice_i)+".gpe");
+        for(float score : vec){
+            std::cout<<n<<"\t"<<score<<std::endl;
+            score_sum+=score;
+            n++;
+        }
+    }
+    std::cout<<"SCORE SUM : "<<score_sum<<std::endl;
+    BOOST_CHECK(abs(score_sum-1)<0.00001);
     clean_pagerank_files(props);
 }
 

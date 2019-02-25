@@ -65,6 +65,8 @@ public:
   const uint64_t m;
   const uint64_t n;
 
+  uint64_t get_n_slices();
+
 private:
   Properties *props;
 
@@ -86,6 +88,11 @@ private:
   void open_files(std::ios_base::openmode mode);
   void close_files();
 };
+
+template <typename MatrixT>
+  uint64_t DiskSparseMatrix<MatrixT>::get_n_slices(){
+    return props->nslices;
+  }
 
 template <typename MatrixT>
 void DiskSparseMatrix<MatrixT>::load_edgelist(std::vector<std::string> &filenames, int ftype, int options)
