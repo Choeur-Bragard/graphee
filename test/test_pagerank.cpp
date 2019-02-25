@@ -84,7 +84,6 @@ BOOST_AUTO_TEST_CASE( test_smallGraph )
                  &adjacency_matrix, // give the adress to the adjacency matrix
                  0.85); // damping factor of the Pagerank (original value)
 
-    std::cout<<"adjacency lines : "<<adjacency_matrix.m<<std::endl;
     /**
      * Compute the Pagerank with 10 iterations
      */

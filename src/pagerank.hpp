@@ -51,12 +51,12 @@ private:
       pagerank_itp1; ///< Temporary disk vector to save pagerank at iteration+1
   DiskVector<Vector<float>>
       out_bounds; ///< Disk vector to save the number of out links
-};     
-           // class graphe::Pagerank
+};
+// class graphe::Pagerank
 void pagerankStatistic(DiskVector<Vector<float>> &pagerank_itp1,
-                  DiskVector<Vector<float>> &pagerank,
-                  DiskVector<Vector<float>> &out_bounds, float &sinkScore,
-                  float &sumScore, float &scoreVariation);
+                       DiskVector<Vector<float>> &pagerank,
+                       DiskVector<Vector<float>> &out_bounds, float &sinkScore,
+                       float &sumScore, float &scoreVariation);
 
 template <typename DiskSparseMatrixT>
 void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
@@ -78,7 +78,8 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
   uint64_t n_sink_nodes = out_bounds.countZeros();
   // amount of score given by the sink nodes to each nodes
   float sinkScore = 1. / ((float)props->nvertices) * n_sink_nodes;
-  // pagerank variation with the previous iteration (arbirtraily initialised at 0)
+  // pagerank variation with the previous iteration (arbirtraily initialised at
+  // 0)
   float scoreVariation = 0;
   // sum of all pagerank score
   float sumScore = 1.;
@@ -90,16 +91,19 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
 
     // One inits the pagerank vector at iteration T+1 with the score received by
     // random jump plus the redistribution from sink node.
-    pagerank_itp1 = std::move(DiskVector<Vector<float>>(props, "prp1", (1 - sinkScore) * (1. - damp) / ((float)props->nvertices) +
-      sinkScore / ((float)props->nvertices)));
+    pagerank_itp1 = std::move(DiskVector<Vector<float>>(
+        props, "prp1",
+        (1 - sinkScore) * (1. - damp) / ((float)props->nvertices) +
+            sinkScore / ((float)props->nvertices)));
 
     // We compute \f$ PR_{t+1} \f$
-    pagerank_itp1.dmat_prod_dvec_over_dvec(damp,*adj_mat, pagerank, out_bounds);
-    
-    //We compute statistics 
+    pagerank_itp1.dmat_prod_dvec_over_dvec(damp, *adj_mat, pagerank,
+                                           out_bounds);
+
+    // We compute statistics
     pagerankStatistic(pagerank_itp1, pagerank, out_bounds, sinkScore, sumScore,
                       scoreVariation);
-    
+
     // Display statistics report
     oss.str("");
     oss.clear();
@@ -111,46 +115,49 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
     print_strong_log(oss.str());
     oss.str("");
     oss.clear();
-    oss << "sinkScore : " << sinkScore ;
+    oss << "sinkScore : " << sinkScore;
     print_strong_log(oss.str());
     oss.str("");
     oss.clear();
-    oss << "end of iteration #" << loop_id ;
+    oss << "end of iteration #" << loop_id;
     print_strong_log(oss.str());
 
     pagerank_itp1.swap(pagerank);
   }
 }
 
-/**
- *Compute the following Pagerank statistics : 
- * scoreVariation : variation with the previous pr iteration. can be used to get an estimation of the convergence or as a stopping criterion
- * sinSckore : amount of score held by nodes without outlinks. this statistic is required for the next pagerank iteration
- * sumScore : sum of each node's score. value far from one indicate a bug or numericale error.
- */ 
+/** Compute Pagerank statistics
+ *
+ * @param scoreVariation : variation of score with the previous iteration. can
+ * be used to get an estimation of the convergence or as a stopping criterion.
+ * @param sinSckore : amount of score held by nodes without outlinks. this
+ * statistic is required for the next pagerank iteration.
+ * @param sumScore : sum of each node's score. value far from
+ * one indicate a bug or numericale error.
+ */
 void pagerankStatistic(DiskVector<Vector<float>> &pagerank_itp1,
-                  DiskVector<Vector<float>> &pagerank,
-                  DiskVector<Vector<float>> &out_bounds, float &sinkScore,
-                  float &sumScore, float &scoreVariation) {
+                       DiskVector<Vector<float>> &pagerank,
+                       DiskVector<Vector<float>> &out_bounds, float &sinkScore,
+                       float &sumScore, float &scoreVariation) {
 
   sinkScore = 0;
   sumScore = 0;
   scoreVariation = 0;
-  
-  #pragma omp parallel for reduction(+:sinkScore,sumScore,scoreVariation)
+
+#pragma omp parallel for reduction(+ : sinkScore, sumScore, scoreVariation)
   for (uint64_t slice = 0; slice < pagerank.get_n_slices(); slice++) {
     Vector<float> out_bounds_vec(std::move(out_bounds.get_slice(slice)));
     Vector<float> pagerank_vec(std::move(pagerank.get_slice(slice)));
     Vector<float> pagerank_itp1_vec(std::move(pagerank_itp1.get_slice(slice)));
 
-    for(int i=0;i<pagerank_vec.get_lines();i++){
-      sumScore+=pagerank_itp1_vec[i];
-      scoreVariation+=(pagerank_vec[i]-pagerank_itp1_vec[i])*(pagerank_vec[i]-pagerank_itp1_vec[i]);
+    for (int i = 0; i < pagerank_vec.get_lines(); i++) {
+      sumScore += pagerank_itp1_vec[i];
+      scoreVariation += (pagerank_vec[i] - pagerank_itp1_vec[i]) *
+                        (pagerank_vec[i] - pagerank_itp1_vec[i]);
 
-      if(out_bounds_vec[i]==0){
-        sinkScore+=pagerank_itp1_vec[i];
+      if (out_bounds_vec[i] == 0) {
+        sinkScore += pagerank_itp1_vec[i];
       }
-
     }
   }
 }
