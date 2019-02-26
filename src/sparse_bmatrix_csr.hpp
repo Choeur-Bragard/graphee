@@ -298,7 +298,6 @@ Vector<float> SparseBMatrixCSR::columns_sum() {
 
   Vector<float> res(props, m, 0.);
 
-#pragma omp parallel for num_threads(props->nthreads)
   for (uint64_t i = 0; i < ja.size(); i++) {
     res[ja[i]] += 1;
   }
