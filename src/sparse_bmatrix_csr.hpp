@@ -73,7 +73,7 @@ public:
   template <typename vecValueT>
   Vector<vecValueT> operator*(const Vector<vecValueT> &rvec);
 
-  Vector<float> columns_sum();
+  Vector<double> columns_sum();
 
   const std::string matrix_typename{"SparseBMatrixCSR"};
 
@@ -293,19 +293,6 @@ SparseBMatrixCSR &SparseBMatrixCSR::operator=(SparseBMatrixCSR &&rmat) {
   return *this;
 }
 
-// template <typename vecValueT=float>
-Vector<float> SparseBMatrixCSR::columns_sum() {
-
-  Vector<float> res(props, m, 0.);
-
-#pragma omp parallel for num_threads(props->nthreads)
-  for (uint64_t i = 0; i < ja.size(); i++) {
-    res[ja[i]] += 1;
-  }
-
-  return res;
-}
-
 template <typename vecValueT>
 Vector<vecValueT> SparseBMatrixCSR::operator*(const Vector<vecValueT> &rvec) {
   if (n != rvec.get_lines()) {
@@ -327,6 +314,19 @@ Vector<vecValueT> SparseBMatrixCSR::operator*(const Vector<vecValueT> &rvec) {
 
   return res;
 }
+
+Vector<double> SparseBMatrixCSR::columns_sum() {
+
+  Vector<double> res(props, m, 0.);
+
+#pragma omp parallel for num_threads(props->nthreads)
+  for (uint64_t i = 0; i < ja.size(); i++) { // TODO : there might be a bug here, we might need to do an array reduction !
+    res[ja[i]] += 1;
+  }
+
+  return res;
+}
+
 
 uint64_t SparseBMatrixCSR::get_lines() { return m; }
 

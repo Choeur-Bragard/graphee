@@ -180,9 +180,9 @@ void DiskVector<VectorT>::dmat_columns_sum(DiskMatrixT &dmat) {
   for (uint64_t col = 0; col < props->nslices; col++) {
     VectorT res(std::move(this->get_slice(col)));
     for (uint64_t line = 0; line < props->nslices; line++) {
-      typename DiskMatrixT::MatrixType smat =
-          std::move(dmat.get_block(line, col));
-      res += smat.columns_sum();
+      typename DiskMatrixT::MatrixType smat = std::move(dmat.get_block(line, col));
+      
+      res += smat.columns_sum(); 
     }
     res.save(this->get_slice_filename(col));
   }

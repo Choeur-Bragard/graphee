@@ -25,7 +25,7 @@ public:
    *
    */
   Pagerank(Properties *properties, DiskSparseMatrixT *adjency_matrix,
-           float damp = 0.85)
+           double damp = 0.85)
       : props(properties), adj_mat(adjency_matrix), damp(damp) {}
 
   /** Compute the Pagerank
@@ -42,21 +42,21 @@ public:
   void save_top_pagerank(uint64_t ntops, std::string out_filename) {}
 
 private:
-  const float damp;           ///< The pagerank damping factor
+  const double damp;           ///< The pagerank damping factor
   Properties *props;          ///< Pointer to the graph properties
   DiskSparseMatrixT *adj_mat; ///< Pointer to the ajacency matrix
 
-  DiskVector<Vector<float>> pagerank; ///< Disk vector to save pagerank
-  DiskVector<Vector<float>>
+  DiskVector<Vector<double>> pagerank; ///< Disk vector to save pagerank
+  DiskVector<Vector<double>>
       pagerank_itp1; ///< Temporary disk vector to save pagerank at iteration+1
-  DiskVector<Vector<float>>
+  DiskVector<Vector<double>>
       out_bounds; ///< Disk vector to save the number of out links
+  
+  void pagerankStatistic(DiskVector<Vector<double>> &pagerank_itp1,
+                       DiskVector<Vector<double>> &pagerank,
+                       DiskVector<Vector<double>> &out_bounds, double &sinkScore,
+                       double &sumScore, double &scoreVariation);
 };
-// class graphe::Pagerank
-void pagerankStatistic(DiskVector<Vector<float>> &pagerank_itp1,
-                       DiskVector<Vector<float>> &pagerank,
-                       DiskVector<Vector<float>> &out_bounds, float &sinkScore,
-                       float &sumScore, float &scoreVariation);
 
 template <typename DiskSparseMatrixT>
 void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
@@ -67,22 +67,22 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
   }
 
   // number of outlinks of each node
-  out_bounds = std::move(DiskVector<Vector<float>>(props, "ob", 0.));
+  out_bounds = std::move(DiskVector<Vector<double>>(props, "ob", 0));
   out_bounds.dmat_columns_sum(*adj_mat);
 
   // pagerank is initiated to 1/N.
   pagerank = std::move(
-      DiskVector<Vector<float>>(props, "pr", 1. / ((float)props->nvertices)));
+      DiskVector<Vector<double>>(props, "pr", 1. / ((double)props->nvertices)));
 
   // count the number of nodes without outlinks
   uint64_t n_sink_nodes = out_bounds.countZeros();
   // amount of score given by the sink nodes to each nodes
-  float sinkScore = 1. / ((float)props->nvertices) * n_sink_nodes;
+  double sinkScore = 1. / ((double)props->nvertices) * n_sink_nodes;
   // pagerank variation with the previous iteration (arbirtraily initialised at
   // 0)
-  float scoreVariation = 0;
+  double scoreVariation = 0;
   // sum of all pagerank score
-  float sumScore = 1.;
+  double sumScore = 1.;
 
   for (uint64_t loop_id = 0; loop_id < niters; loop_id++) {
     std::ostringstream oss;
@@ -91,10 +91,10 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
 
     // One inits the pagerank vector at iteration T+1 with the score received by
     // random jump plus the redistribution from sink node.
-    pagerank_itp1 = std::move(DiskVector<Vector<float>>(
+    pagerank_itp1 = std::move(DiskVector<Vector<double>>(
         props, "prp1",
-        (1 - sinkScore) * (1. - damp) / ((float)props->nvertices) +
-            sinkScore / ((float)props->nvertices)));
+        (1 - sinkScore) * (1. - damp) / ((double)props->nvertices) +
+            sinkScore / ((double)props->nvertices)));
 
     // We compute \f$ PR_{t+1} \f$
     pagerank_itp1.dmat_prod_dvec_over_dvec(damp, *adj_mat, pagerank,
@@ -135,10 +135,11 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
  * @param sumScore : sum of each node's score. value far from
  * one indicate a bug or numericale error.
  */
-void pagerankStatistic(DiskVector<Vector<float>> &pagerank_itp1,
-                       DiskVector<Vector<float>> &pagerank,
-                       DiskVector<Vector<float>> &out_bounds, float &sinkScore,
-                       float &sumScore, float &scoreVariation) {
+template <typename DiskSparseMatrixT>
+void Pagerank<DiskSparseMatrixT>::pagerankStatistic(DiskVector<Vector<double>> &pagerank_itp1,
+                       DiskVector<Vector<double>> &pagerank,
+                       DiskVector<Vector<double>> &out_bounds, double &sinkScore,
+                       double &sumScore, double &scoreVariation) {
 
   sinkScore = 0;
   sumScore = 0;
@@ -146,9 +147,9 @@ void pagerankStatistic(DiskVector<Vector<float>> &pagerank_itp1,
 
 #pragma omp parallel for reduction(+ : sinkScore, sumScore, scoreVariation)
   for (uint64_t slice = 0; slice < pagerank.get_n_slices(); slice++) {
-    Vector<float> out_bounds_vec(std::move(out_bounds.get_slice(slice)));
-    Vector<float> pagerank_vec(std::move(pagerank.get_slice(slice)));
-    Vector<float> pagerank_itp1_vec(std::move(pagerank_itp1.get_slice(slice)));
+    Vector<double> out_bounds_vec(std::move(out_bounds.get_slice(slice)));
+    Vector<double> pagerank_vec(std::move(pagerank.get_slice(slice)));
+    Vector<double> pagerank_itp1_vec(std::move(pagerank_itp1.get_slice(slice)));
 
     for (int i = 0; i < pagerank_vec.get_lines(); i++) {
       sumScore += pagerank_itp1_vec[i];
