@@ -13,5 +13,8 @@ examples: pagerank
 pagerank: examples/pagerank.cpp src/edgelist.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
 
+dump_pr: examples/dump_pr.cpp src/edgelist.cpp src/utils.cpp
+	$(CC) $(OPT) $(INC) -o examples/$@ $^ $(LIB)
+
 tests: test/test_pagerank.cpp src/edgelist.cpp src/utils.cpp
 	$(CC) $(OPT) $(INC) -o tests $^ $(LIB)
