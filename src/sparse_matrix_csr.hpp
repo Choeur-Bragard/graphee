@@ -84,8 +84,6 @@ public:
   Vector<vecValueT> &operator*(Vector<vecValueT> &rvec);
   SparseMatrixCSR<ValueT> &operator*(ValueT rval);
 
-  Vector<float> columns_sum();
-
   const std::string matrix_typename{"SparseMatrixCSR"};
 
   using ValueType = ValueT;
@@ -317,19 +315,6 @@ Vector<vecValueT> &SparseMatrixCSR<ValueT>::operator*(Vector<vecValueT> &rvec)
       res[i] += a[ja[ja_idx]] * rvec[ja[ja_idx]];
     }
   }
-}
-
-template <typename ValueT>
-Vector<float> SparseMatrixCSR<ValueT>::columns_sum(){
-
-  Vector<float> res(props, m, 0.);
-
-#pragma omp parallel for num_threads (props->nthreads)
-  for(uint64_t i = 0; i < ja.size(); i++){
-    res[ja[i]]+=1;
-  }
-
-  return res;
 }
 
 
