@@ -319,14 +319,12 @@ Vector<double> SparseBMatrixCSR::columns_sum() {
 
   Vector<double> res(props, m, 0.);
 
-#pragma omp parallel for num_threads(props->nthreads)
-  for (uint64_t i = 0; i < ja.size(); i++) { // TODO : there might be a bug here, we might need to do an array reduction !
+  for (uint64_t i = 0; i < ja.size(); i++) {
     res[ja[i]] += 1;
   }
 
   return res;
 }
-
 
 uint64_t SparseBMatrixCSR::get_lines() { return m; }
 
