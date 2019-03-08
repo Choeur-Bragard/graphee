@@ -53,7 +53,7 @@ public:
 
   ~DiskVector() {}
 
-  uint64_t get_n_slices();
+  uint64_t get_nslices();
   VectorT &get_slice(uint64_t slice_id);
 
   void swap(DiskVector<VectorT> &rvec);
@@ -97,7 +97,7 @@ private:
   std::string get_slice_filename(uint64_t slice_id);
 }; // class DiskVector
 
-template <typename VectorT> uint64_t DiskVector<VectorT>::get_n_slices() {
+template <typename VectorT> uint64_t DiskVector<VectorT>::get_nslices() {
   return props->nslices;
 }
 

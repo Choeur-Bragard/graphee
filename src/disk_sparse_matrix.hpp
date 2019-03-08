@@ -65,7 +65,7 @@ public:
   const uint64_t m;
   const uint64_t n;
 
-  uint64_t get_n_slices();
+  uint64_t get_nslices();
 
 private:
   Properties *props;
@@ -90,7 +90,7 @@ private:
 };
 
 template <typename MatrixT>
-  uint64_t DiskSparseMatrix<MatrixT>::get_n_slices(){
+  uint64_t DiskSparseMatrix<MatrixT>::get_nslices(){
     return props->nslices;
   }
 
