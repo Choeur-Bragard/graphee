@@ -105,22 +105,10 @@ void Pagerank<DiskSparseMatrixT>::compute_pagerank(uint64_t niters) {
                       scoreVariation);
 
     // Display statistics report
-    oss.str("");
-    oss.clear();
-    oss << "scoreVariation : " << scoreVariation;
-    print_strong_log(oss.str());
-    oss.str("");
-    oss.clear();
-    oss << "sumScore : " << sumScore;
-    print_strong_log(oss.str());
-    oss.str("");
-    oss.clear();
-    oss << "sinkScore : " << sinkScore;
-    print_strong_log(oss.str());
-    oss.str("");
-    oss.clear();
-    oss << "end of iteration #" << loop_id;
-    print_strong_log(oss.str());
+    print_strong_log("Score variation: " + std::to_string(scoreVariation));
+    print_strong_log("Sum PR: " + std::to_string(sumScore));
+    print_strong_log("Sink score: " + std::to_string(sinkScore));
+    print_strong_log("End of PR iter. #" + std::to_string(loop_id));
 
     pagerank_itp1.swap(pagerank);
   }
