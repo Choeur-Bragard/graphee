@@ -241,10 +241,10 @@ Vector<ValueT> &Vector<ValueT>::divide_and_sum_Nan(Vector<ValueT> &rvec, ValueT&
 #pragma omp parallel for num_threads(props->nthreads) reduction(+:aggs)
   for (uint64_t i = 0; i < props->window; i++)
   {
-    if(rvec[i]==0){
-      aggs+=this->at(i);
+    if (rvec[i] == 0){
+      aggs + =this->at(i);
       this->at(i) = 0;
-    }else{
+    } else {
       this->at(i) /= rvec[i];
     }
   }

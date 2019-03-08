@@ -253,13 +253,20 @@ void DiskVector<VectorT>::divide_and_sum_Nan(DiskVector<VectorT> &ldvec,
     exit(-1);
   }
 
-#pragma omp parallel for reduction(+ : aggregator)
+  float aggregator_array[props->nslices];
+
+#pragma omp parallel for
   for (uint64_t slice = 0; slice < props->nslices; slice++) {
     VectorT res(std::move(this->get_slice(slice)));
     VectorT lvec(std::move(ldvec.get_slice(slice)));
-    res.divide_and_sum_Nan(lvec, aggregator);
+
+    res.divide_and_sum_Nan(lvec, aggregator_array[slice]);
     res.save(this->get_slice_filename(slice));
   }
+
+  // Final reduction
+  for (uint64_t slice = 0; slice < props->nslices; slice++)
+    aggregator += aggregator_array[slice];
 }
 
 template <typename VectorT>
