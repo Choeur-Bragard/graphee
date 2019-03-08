@@ -242,7 +242,7 @@ Vector<ValueT> &Vector<ValueT>::divide_and_sum_Nan(Vector<ValueT> &rvec, ValueT&
   for (uint64_t i = 0; i < props->window; i++)
   {
     if (rvec[i] == 0){
-      aggs + =this->at(i);
+      aggs += this->at(i);
       this->at(i) = 0;
     } else {
       this->at(i) /= rvec[i];

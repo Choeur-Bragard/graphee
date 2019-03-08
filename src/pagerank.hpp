@@ -146,7 +146,7 @@ void Pagerank<DiskSparseMatrixT>::pagerankStatistic(DiskVector<Vector<double>> &
   scoreVariation = 0;
 
 #pragma omp parallel for reduction(+ : sinkScore, sumScore, scoreVariation)
-  for (uint64_t slice = 0; slice < pagerank.get_n_slices(); slice++) {
+  for (uint64_t slice = 0; slice < pagerank.get_nslices(); slice++) {
     Vector<double> out_bounds_vec(std::move(out_bounds.get_slice(slice)));
     Vector<double> pagerank_vec(std::move(pagerank.get_slice(slice)));
     Vector<double> pagerank_itp1_vec(std::move(pagerank_itp1.get_slice(slice)));
